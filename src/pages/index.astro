@@ -1,11 +1,15 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from "../layouts/Layout.astro";
+import UserProfile from "../components/UserProfile.svelte";
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Panel de Control">
+  <main class="h-svh flex flex-col items-center justify-center">
+    <div class="max-w-md w-full">
+      <h1 class="text-center text-3xl font-bold mb-6">
+        Bienvenido a la zona privada
+      </h1>
+      <UserProfile client:idle />
+    </div>
+  </main>
 </Layout>
