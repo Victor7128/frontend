@@ -1,58 +1,83 @@
 <script lang="ts">
   import { Dropzone } from "flowbite-svelte";
 
-  let value: FileList | null = $state(null);
+  let files: FileList | null = null;
+  let imageUrl: string | null = null;
+  let showError = false;
+  let errorMessage = "";
 
-  function handleChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-    value = target.files;
+  function isImageFile(file: File) {
+    return file.type.startsWith("image/");
   }
 
-  function dropHandle(event: DragEvent) {
-    event.preventDefault();
-    value = event.dataTransfer?.files ?? null;
+  // Cada vez que cambian los archivos seleccionados
+  $: if (files && files.length > 0) {
+    const file = files[0];
+    if (!isImageFile(file)) {
+      showError = true;
+      errorMessage = `El archivo "${file.name}" no es una imagen.`;
+      imageUrl = null;
+      files = null;
+      setTimeout(() => (showError = false), 5000);
+    } else {
+      imageUrl = URL.createObjectURL(file);
+    }
   }
 
-  function showFiles(files: FileList | null): string {
-    if (!files || files.length === 0) return "No files selected.";
-    return Array.from(files)
-      .map((file) => file.name)
-      .join(", ");
+  function reset() {
+    files = null;
+    imageUrl = null;
   }
 </script>
 
-<Dropzone
-  id="dropzone"
-  bind:files={value}
-  ondrop={dropHandle}
-  ondragover={(event) => event.preventDefault()}
-  onchange={handleChange}
->
-  <svg
-    aria-hidden="true"
-    class="mb-3 h-10 w-10 text-gray-400"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-    />
-  </svg>
-
-  {#if !value || value.length === 0}
-    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-      <span class="font-semibold">Click to upload</span>
-      or drag and drop
-    </p>
-    <p class="text-xs text-gray-500 dark:text-gray-400">
-      SVG, PNG, JPG or GIF (MAX. 800x400px)
-    </p>
-  {:else}
-    <p class="text-sm text-green-600">{showFiles(value)}</p>
+<div class="p-4 w-full">
+  {#if showError}
+    <div class="alert-error">¡Error! {errorMessage}</div>
   {/if}
-</Dropzone>
+
+  <Dropzone
+    bind:files={files}
+    accept="image/*"
+    multiple={false}
+    class="my-dropzone"
+  >
+    <div class="content-center p-6">
+      {#if !files}
+        <p>Haz clic o arrastra para subir una imagen</p>
+      {:else}
+        <p>Imagen seleccionada:</p>
+        {#if imageUrl}
+          <img src={imageUrl} alt="Preview" class="mt-4 rounded-lg max-w-full h-auto" />
+          <button on:click={reset} class="mt-2 btn-secondary">
+            Seleccionar otra
+          </button>
+        {/if}
+      {/if}
+    </div>
+  </Dropzone>
+</div>
+
+<style>
+  :global(.my-dropzone) {
+    border: 2px dashed #e2e8f0;
+    border-radius: 1rem;
+    background: #f8fafc;
+  }
+  :global(.my-dropzone:hover) {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+  }
+  .alert-error {
+    margin-bottom: 1rem;
+    padding: .75rem 1rem;
+    border-radius: .5rem;
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .btn-secondary {
+    padding: .5rem 1rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: .375rem;
+  }
+</style>

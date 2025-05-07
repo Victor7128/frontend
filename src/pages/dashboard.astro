@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.svelte";
+import DropBox from "../components/DropBox.svelte";
 ---
 
 <Layout>
@@ -12,12 +13,10 @@ import Header from "../components/Header.svelte";
       }
     }
   </script>
+  <Header client:idle />
   <main class="h-svh flex flex-col items-center justify-center">
     <div class="max-w-md w-full">
-      <h1 class="text-center text-3xl font-bold mb-6">
-        Bienvenido a la zona privada
-      </h1>
-      <Header client:idle />
+      <DropBox client:idle />
     </div>
   </main>
 </Layout>
