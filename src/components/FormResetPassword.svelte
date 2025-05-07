@@ -89,7 +89,7 @@
       message = data.message;
       step = "success";
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = "/";
       }, 3000);
     } catch (err) {
       error = err.message;
@@ -311,7 +311,7 @@
 
     {#if step === "request" || step === "reset"}
       <div class="mt-4 text-center">
-        <a href="/login" class="font-medium text-blue-600 hover:text-blue-500">
+        <a href="/" class="font-medium text-blue-600 hover:text-blue-500">
           Volver a iniciar sesión
         </a>
       </div>

@@ -1,15 +1,14 @@
 ---
+import FormLogin from "../components/FormLogin.svelte";
 import Layout from "../layouts/Layout.astro";
-import UserProfile from "../components/UserProfile.svelte";
 ---
 
-<Layout title="Panel de Control">
-  <main class="h-svh flex flex-col items-center justify-center">
-    <div class="max-w-md w-full">
-      <h1 class="text-center text-3xl font-bold mb-6">
-        Bienvenido a la zona privada
-      </h1>
-      <UserProfile client:idle />
-    </div>
+<Layout>
+  <div
+    class="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]"
+  >
+  </div>
+  <main class="grid place-items-center h-screen">
+    <FormLogin client:idle />
   </main>
 </Layout>

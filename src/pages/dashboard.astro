@@ -1,0 +1,23 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.svelte";
+---
+
+<Layout>
+  <script>
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        window.location.href = "/";
+      }
+    }
+  </script>
+  <main class="h-svh flex flex-col items-center justify-center">
+    <div class="max-w-md w-full">
+      <h1 class="text-center text-3xl font-bold mb-6">
+        Bienvenido a la zona privada
+      </h1>
+      <Header client:idle />
+    </div>
+  </main>
+</Layout>

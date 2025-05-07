@@ -50,7 +50,7 @@
 
       // Redirigir al login sin hash
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = "/";
       }, 2000);
     } catch (e) {
       error =
@@ -171,7 +171,7 @@
 
     <div class="text-center mt-4">
       <span class="text-gray-600">¿Ya tienes cuenta?</span>
-      <a href="/login" class="ml-1 text-blue-600 hover:text-blue-800 underline"
+      <a href="/" class="ml-1 text-blue-600 hover:text-blue-800 underline"
         >Inicia sesión</a
       >
     </div>
