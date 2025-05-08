@@ -10,7 +10,6 @@
     return file.type.startsWith("image/");
   }
 
-  // Cada vez que cambian los archivos seleccionados
   $: if (files && files.length > 0) {
     const file = files[0];
     if (!isImageFile(file)) {

@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.svelte";
 import DropBox from "../components/DropBox.svelte";
+import Graphics from "../components/Graphics.svelte";
 ---
 
 <Layout>
@@ -16,7 +17,8 @@ import DropBox from "../components/DropBox.svelte";
   <Header client:idle />
   <main class="h-svh flex flex-col items-center justify-center">
     <div class="max-w-md w-full">
-      <DropBox client:idle />
+      <!-- <DropBox client:idle /> -->
+      <Graphics client:idle />
     </div>
   </main>
 </Layout>
