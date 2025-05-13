@@ -5,21 +5,40 @@
   let imageUrl: string | null = null;
   let showError = false;
   let errorMessage = "";
+  let loading = false;
 
   function isImageFile(file: File) {
     return file.type.startsWith("image/");
+  }
+
+  async function handleImageUpload(file: File) {
+    loading = true;    
+    try {
+      const reader = new FileReader();
+      reader.onload = function() {
+        sessionStorage.setItem('uploadedImage', reader.result as string);
+        window.location.href = "/resultados";
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      showError = true;
+      errorMessage = "Error al procesar la imagen.";
+      setTimeout(() => (showError = false), 5000);
+    } finally {
+      loading = false;
+    }
   }
 
   $: if (files && files.length > 0) {
     const file = files[0];
     if (!isImageFile(file)) {
       showError = true;
-      errorMessage = `El archivo "${file.name}" no es una imagen.`;
+      errorMessage = `${file.name} no es una imagen.`;
       imageUrl = null;
       files = null;
       setTimeout(() => (showError = false), 5000);
     } else {
-      imageUrl = URL.createObjectURL(file);
+      handleImageUpload(file);
     }
   }
 
@@ -31,29 +50,25 @@
 
 <div class="p-4 w-full">
   {#if showError}
-    <div class="alert-error">¡Error! {errorMessage}</div>
+    <div class="alert-error">{errorMessage}</div>
   {/if}
 
-  <Dropzone
-    bind:files={files}
-    accept="image/*"
-    multiple={false}
-    class="my-dropzone"
-  >
-    <div class="content-center p-6">
-      {#if !files}
-        <p>Haz clic o arrastra para subir una imagen</p>
-      {:else}
-        <p>Imagen seleccionada:</p>
-        {#if imageUrl}
-          <img src={imageUrl} alt="Preview" class="mt-4 rounded-lg max-w-full h-auto" />
-          <button on:click={reset} class="mt-2 btn-secondary">
-            Seleccionar otra
-          </button>
-        {/if}
-      {/if}
+  {#if loading}
+    <div class="loading-indicator">
+      <p>Procesando imagen...</p>
     </div>
-  </Dropzone>
+  {:else}
+    <Dropzone
+      bind:files={files}
+      accept="image/*"
+      multiple={false}
+      class="my-dropzone"
+    >
+      <div class="content-center p-6">
+        <p>Haz clic o arrastra para subir una imagen</p>
+      </div>
+    </Dropzone>
+  {/if}
 </div>
 
 <style>
@@ -73,10 +88,11 @@
     background: #fee2e2;
     color: #991b1b;
   }
-  .btn-secondary {
-    padding: .5rem 1rem;
-    background: #3b82f6;
-    color: white;
-    border-radius: .375rem;
+  .loading-indicator {
+    text-align: center;
+    padding: 2rem;
+    background: #f8fafc;
+    border-radius: 1rem;
+    border: 2px dashed #e2e8f0;
   }
 </style>

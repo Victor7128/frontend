@@ -96,11 +96,9 @@
 <svelte:window on:click={handleClickOutside} />
 
 <header
-  class="absolute top-0 left-0 w-full flex justify-between items-center px-5"
+  class="relative w-full flex justify-between items-center p-5"
 >
-  <div class="w-20 overflow-hidden">
-    <img src="/logo.png" alt="Logo" />
-  </div>
+  <a href="/dashboard" class="text-3xl font-semibold text-white/75">FraudVision</a>
 
   {#if loading}
     <div class="text-center py-4">
@@ -108,20 +106,19 @@
     </div>
   {:else if error}
     <div
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+      class="bg-red-100 border border-red-800 text-red-500 px-4 py-3 rounded mb-4"
     >
       {error}
     </div>
   {:else if user}
     <div class="relative">
-      <!-- Botón de usuario con imagen que activa el menú desplegable -->
       <button
         id="user-button"
         on:click={toggleDropdown}
-        class="flex items-center space-x-2 focus:outline-none cursor-pointer"
+        class="flex items-center space-x-2 focus:outline-none transition-all ease-in duration-200 cursor-pointer"
       >
         <div
-          class="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-blue-500 transition-colors"
+          class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/75 hover:border-white transition-all ease-in duration-200"
         >
           <img
             src="/user.png"
@@ -136,18 +133,18 @@
           id="user-dropdown"
           class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
         >
-          <div class="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
+          <div class="px-4 py-2 text-sm text-black/75 border-b border-gray-200">
             <span class="font-medium">{user.username}</span>
           </div>
           <button
             on:click={goToChangePassword}
-            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            class="block w-full text-left px-4 py-2 text-sm text-black/75 hover:bg-gray-100 transition-all ease-in duration-200 cursor-pointer"
           >
             Cambiar contraseña
           </button>
           <button
             on:click={handleLogoutAll}
-            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 cursor-pointer"
+            class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 transition-all ease-in duration-200 cursor-pointer"
           >
             Cerrar Sesión
           </button>

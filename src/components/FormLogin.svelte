@@ -79,63 +79,49 @@
   }
 </script>
 
-<div class="bg-white p-8 rounded-2xl shadow-lg w-96 max-w-full">
-  <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">
-    Iniciar Sesión
-  </h1>
+<div class=" p-8 rounded-2xl shadow-lg w-96 max-w-full border border-white/75">
+  <h1 class="text-2xl font-bold mb-6 text-center text-white/75">Iniciar Sesión</h1>
 
   {#if checkingAuth}
-    <div class="text-center py-4">
+    <div class="text-center py-4 text-white/75">
       <p>Comprobando autenticación...</p>
     </div>
   {:else}
     {#if error}
-      <div
-        class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
-      >
+      <div class="mb-4 p-3 border border-red-800 text-red-800 rounded">
         {error}
       </div>
     {/if}
 
     <form on:submit|preventDefault={submit} class="space-y-4">
       <div>
-        <label
-          for="identifier"
-          class="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Email o nombre de usuario
-        </label>
         <input
           id="identifier"
           type="text"
           bind:value={identifier}
           placeholder="Email o nombre de usuario"
-          class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full p-3 border border-white/75 rounded-md text-white/75 bg-transparent [&:-webkit-autofill]:bg-transparent"
           required
+          autocomplete="off"
         />
       </div>
 
       <div>
-        <label
-          for="password"
-          class="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Contraseña
-        </label>
         <input
           id="password"
           type="password"
           bind:value={password}
           placeholder="Contraseña"
-          class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full p-3 rounded-md border border-white/75 text-white/75 bg-transparent [&:-webkit-autofill]:bg-transparent"
           required
+          autocomplete="off"
         />
       </div>
 
       <div class="text-right">
         <a
           href="/reset-password"
-          class="text-sm text-blue-600 hover:text-blue-800"
+          class="text-sm text-white/75 hover:text-white transition-all ease-in duration-200"
         >
           ¿Olvidaste tu contraseña?
         </a>
@@ -144,7 +130,7 @@
       <button
         type="submit"
         disabled={loading}
-        class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        class="w-full bg-white/75 text-black border p-3 rounded-md hover:bg-black hover:text-white/75 hover:border-white/75  transition-all ease-in duration-200 cursor-pointer"
       >
         {#if loading}
           <span>Cargando...</span>
@@ -154,10 +140,10 @@
       </button>
 
       <div class="text-center mt-4">
-        <span class="text-gray-600">¿No tienes cuenta?</span>
+        <span class="text-white/75">¿No tienes cuenta?</span>
         <a
           href="/register"
-          class="ml-1 text-blue-600 hover:text-blue-800 underline"
+          class="ml-1 text-white/75 hover:text-white transition-all ease-in duration-200 underline"
         >
           Regístrate
         </a>

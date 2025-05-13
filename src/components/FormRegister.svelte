@@ -65,20 +65,22 @@
   }
 </script>
 
-<div class="bg-white p-8 rounded-lg shadow-lg w-96 max-w-full">
-  <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">
+<div class="bg-black p-8 rounded-lg border border-white/75 w-96 max-w-full">
+  <h1 class="text-2xl font-bold mb-6 text-center text-white/75">
     Crear cuenta
   </h1>
 
   {#if error}
-    <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div
+      class="mb-4 p-3 bg-black border border-red-800 text-red-500 rounded-md text-center"
+    >
       {error}
     </div>
   {/if}
 
   {#if success}
     <div
-      class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded"
+      class="mb-4 p-3 bg-black border border-green-800 text-green-500 text-center rounded-md"
     >
       ¡Registro exitoso! Redirigiendo al inicio de sesión...
     </div>
@@ -86,21 +88,22 @@
 
   <form on:submit|preventDefault={submit} class="space-y-4">
     <div>
-      <label for="email" class="block text-sm font-medium text-gray-700 mb-1"
-        >Email</label
+      <label for="email" class="block text-sm font-medium text-white/75 mb-1"
+        >Correo Electonico</label
       >
       <input
         id="email"
         type="email"
         bind:value={email}
         placeholder="correo@ejemplo.com"
-        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full p-3 border border-white/75 text-white/75 rounded-md"
         required
+        autocomplete="off"
       />
     </div>
 
     <div>
-      <label for="username" class="block text-sm font-medium text-gray-700 mb-1"
+      <label for="username" class="block text-sm font-medium text-white/75 mb-1"
         >Nombre de usuario</label
       >
       <input
@@ -110,27 +113,29 @@
         placeholder="usuario123"
         minlength="3"
         maxlength="50"
-        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full p-3 border border-white/75 text-white/75 rounded-md"
         required
+        autocomplete="off"
       />
     </div>
 
     <div>
-      <label for="name" class="block text-sm font-medium text-gray-700 mb-1"
+      <label for="name" class="block text-sm font-medium text-white/75 mb-1"
         >Nombre completo</label
       >
       <input
         id="name"
         type="text"
         bind:value={name}
-        placeholder="Tu nombre"
-        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Alfredo Pérez"
+        class="w-full p-3 border border-white/75 text-white/75 rounded-md"
         required
+        autocomplete="off"
       />
     </div>
 
     <div>
-      <label for="password" class="block text-sm font-medium text-gray-700 mb-1"
+      <label for="password" class="block text-sm font-medium text-white/75 mb-1"
         >Contraseña</label
       >
       <input
@@ -139,15 +144,16 @@
         bind:value={password}
         placeholder="Contraseña (mín. 8 caracteres)"
         minlength="8"
-        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full p-3 border border-white/75 text-white/75 rounded-md"
         required
+        autocomplete="off"
       />
     </div>
 
     <div>
       <label
         for="confirmPassword"
-        class="block text-sm font-medium text-gray-700 mb-1"
+        class="block text-sm font-medium text-white/75 mb-1"
         >Confirmar contraseña</label
       >
       <input
@@ -155,23 +161,24 @@
         type="password"
         bind:value={confirmPassword}
         placeholder="Confirma tu contraseña"
-        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full p-3 border border-white/75 text-white/75 rounded-md"
         required
+        autocomplete="off"
       />
     </div>
 
     <button
       type="submit"
       disabled={loading}
-      class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+      class="w-full bg-white/75 text-black p-3 rounded-md border hover:bg-black hover:text-white/75 transition-all ease-in duration-200 cursor-pointer"
     >
       {#if loading}<span>Registrando...</span>{:else}<span>Crear cuenta</span
         >{/if}
     </button>
 
     <div class="text-center mt-4">
-      <span class="text-gray-600">¿Ya tienes cuenta?</span>
-      <a href="/" class="ml-1 text-blue-600 hover:text-blue-800 underline"
+      <span class="text-white/75">¿Ya tienes cuenta?</span>
+      <a href="/" class="ml-1 text-white/75 hover:text-white underline transition-all ease-in duration-200"
         >Inicia sesión</a
       >
     </div>

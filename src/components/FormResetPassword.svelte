@@ -38,7 +38,7 @@
 
       if (!response.ok) {
         throw new Error(
-          data.detail?.message || "Error al solicitar restablecimiento"
+          data.detail?.message || "Error al solicitar restablecimiento",
         );
       }
 
@@ -82,7 +82,7 @@
 
       if (!response.ok) {
         throw new Error(
-          data.detail?.message || "Error al restablecer contraseña"
+          data.detail?.message || "Error al restablecer contraseña",
         );
       }
 
@@ -102,9 +102,11 @@
 <div
   class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
 >
-  <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-md">
+  <div
+    class="max-w-md w-full space-y-8 bg-black border border-white/75 p-8 rounded-2xl shadow-md"
+  >
     <div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-white/75">
         {#if step === "request"}
           Restablecer contraseña
         {:else if step === "emailSent"}
@@ -115,11 +117,11 @@
           ¡Contraseña restablecida!
         {/if}
       </h2>
-      <p class="mt-2 text-center text-sm text-gray-600">
+      <p class="mt-2 text-center text-sm text-white/75">
         {#if step === "request"}
           Ingresa tu correo electrónico
         {:else if step === "emailSent"}
-          Correo revizado
+          Revizando si existe el Correo
         {:else if step === "reset"}
           Por favor ingresa tu nueva contraseña
         {:else if step === "success"}
@@ -129,11 +131,11 @@
     </div>
 
     {#if error}
-      <div class="bg-red-50 border-l-4 border-red-400 p-4 my-4">
+      <div class="bg-black border border-red-800 rounded-md p-4 my-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <svg
-              class="h-5 w-5 text-red-400"
+              class="h-5 w-5 text-red-500"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -147,18 +149,18 @@
             </svg>
           </div>
           <div class="ml-3">
-            <p class="text-sm text-red-700">{error}</p>
+            <p class="text-sm text-red-500">{error}</p>
           </div>
         </div>
       </div>
     {/if}
 
     {#if message && !error}
-      <div class="bg-green-50 border-l-4 border-green-400 p-4 my-4">
+      <div class="bg-black border border-green-800 p-4 my-4 rounded-md">
         <div class="flex">
           <div class="flex-shrink-0">
             <svg
-              class="h-5 w-5 text-green-400"
+              class="h-5 w-5 text-green-500"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -172,7 +174,7 @@
             </svg>
           </div>
           <div class="ml-3">
-            <p class="text-sm text-green-700">{message}</p>
+            <p class="text-sm text-green-500">{message}</p>
           </div>
         </div>
       </div>
@@ -186,18 +188,16 @@
     >
       {#if step === "request"}
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">
-            Correo electrónico
-          </label>
-          <div class="mt-1">
+          <div>
             <input
               id="email"
               name="email"
               type="email"
               required
               bind:value={email}
-              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="appearance-none block w-full px-3 py-2 border border-white/75 rounded-md shadow-sm placeholder-white/75 text-white/75"
               placeholder="correo@ejemplo.com"
+              autocomplete="off"
             />
           </div>
         </div>
@@ -206,19 +206,19 @@
           <button
             type="submit"
             disabled={loading}
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            class="group relative w-full flex justify-center py-2 px-4 border text-sm font-medium rounded-md text-black bg-white/75 hover:bg-black hover:text-white/75 hover:border-white/75 transition-all ease-in duration-200 cursor-pointer"
           >
-            {loading ? "Enviando..." : "Enviar instrucciones"}
+            {loading ? "Enviando..." : "Verificar correo"}
           </button>
         </div>
       {:else if step === "emailSent"}
         <div>
-          <p class="text-center text-gray-600 mb-4">Verificando Correo...</p>
+          <p class="text-center text-white/75 mb-4">Vuelve a intentarlo</p>
 
           <button
             type="button"
             on:click={() => (step = "request")}
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="group relative w-full flex justify-center py-2 px-4 border text-black bg-white/75 hover:bg-black hover:text-white/75 hover:border-white/75 transition-all ease-in duration-200 cursor-pointer rounded-md"
           >
             Volver
           </button>
@@ -227,7 +227,7 @@
         <div>
           <label
             for="new-password"
-            class="block text-sm font-medium text-gray-700"
+            class="block text-sm font-medium text-white/75"
           >
             Nueva contraseña
           </label>
@@ -238,30 +238,32 @@
               type="password"
               required
               bind:value={newPassword}
-              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="appearance-none block w-full px-3 py-2 border border-white/75 rounded-md placeholder-white/75 text-white/75"
               placeholder="••••••••"
               minlength="8"
+              autocomplete="off"
             />
           </div>
         </div>
 
         <div>
-          <label
-            for="confirm-password"
-            class="block text-sm font-medium text-gray-700"
-          >
-            Confirmar contraseña
-          </label>
-          <div class="mt-1">
+          <div>
+            <label
+              for="new-password"
+              class="block text-sm font-medium text-white/75"
+            >
+              Confirmar contraseña
+            </label>
             <input
               id="confirm-password"
               name="confirm-password"
               type="password"
               required
               bind:value={confirmPassword}
-              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="appearance-none block w-full px-3 py-2 border border-white/75 rounded-md placeholder-white/75 text-white/75"
               placeholder="••••••••"
               minlength="8"
+              autocomplete="off"
             />
           </div>
         </div>
@@ -270,7 +272,7 @@
           <button
             type="submit"
             disabled={loading}
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            class="group relative w-full flex justify-center py-2 px-4 border text-sm font-medium rounded-md text-black bg-white/75 hover:bg-black hover:text-white/75 hover:border-white/75 transition-all ease-in duration-200 cursor-pointer"
           >
             {loading ? "Procesando..." : "Restablecer contraseña"}
           </button>
@@ -291,16 +293,16 @@
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             ></path>
           </svg>
-          <p class="mt-2 text-base text-gray-600">
+          <p class="mt-2 text-base text-white/75">
             Tu contraseña ha sido restablecida exitosamente.
           </p>
-          <p class="mt-1 text-sm text-gray-500">
+          <p class="mt-1 text-sm text-white/75">
             Serás redirigido a la página de inicio de sesión en unos segundos...
           </p>
           <div class="mt-5">
             <a
               href="/login"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white/75 hover:text-white transition-all ease-in duration-200"
             >
               Ir a iniciar sesión
             </a>
@@ -311,7 +313,10 @@
 
     {#if step === "request" || step === "reset"}
       <div class="mt-4 text-center">
-        <a href="/" class="font-medium text-blue-600 hover:text-blue-500">
+        <a
+          href="/"
+          class="font-medium text-white/75 hover:text-white transition-all ease-in duration-200"
+        >
           Volver a iniciar sesión
         </a>
       </div>
