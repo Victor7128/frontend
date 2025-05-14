@@ -12,7 +12,7 @@
   }
 
   async function handleImageUpload(file: File) {
-    loading = true;    
+    loading = true;
     try {
       const reader = new FileReader();
       reader.onload = function() {
@@ -62,7 +62,7 @@
       bind:files={files}
       accept="image/*"
       multiple={false}
-      class="my-dropzone"
+      class="my-dropzone text-black/75"
     >
       <div class="content-center p-6">
         <p>Haz clic o arrastra para subir una imagen</p>
