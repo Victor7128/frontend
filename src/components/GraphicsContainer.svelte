@@ -2,12 +2,12 @@
   import { onMount } from "svelte";
   import Graphics from "./Graphics.svelte";
 
-  let filtroFuente = { porcentaje: 0, nombre: "" };
+  let filtroFuente = { porcentaje: 5, nombre: "" };
   let transferenciaEstilo = {
-    porcentaje: 15,
+    porcentaje: 5,
     nombre: "Transferencia de Estilo",
   };
-  let otroFiltro = { porcentaje: 30, nombre: "Otro Filtro" };
+  let otroFiltro = { porcentaje: 5, nombre: "Otro Filtro" };
 
   let loading = true;
   let error = null;
@@ -75,7 +75,7 @@
         const data = await apiResponse.json();
         console.log("📊 Datos del backend:", data);
         const nuevoFiltroFuente = {
-          porcentaje: data.porcentaje || 0,
+          porcentaje: data.porcentaje || 5,
           nombre: data.nombre || "Filtro de Fuente",
         };
 
