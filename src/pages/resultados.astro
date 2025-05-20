@@ -1,29 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.svelte";
-import Graphics from "../components/Graphics.svelte";
+import GraphicsContainer from "../components/GraphicsContainer.svelte";
 ---
-
-<script>
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      window.location.href = "/";
-    }
-
-    const uploadedImage = sessionStorage.getItem("uploadedImage");
-    if (!uploadedImage) {
-      window.location.href = "/dashboard";
-    } else {
-      const imageElement = document.getElementById(
-        "uploaded-image",
-      ) as HTMLImageElement;
-      if (imageElement) {
-        imageElement.src = uploadedImage;
-      }
-    }
-  }
-</script>
 
 <Layout>
   <Header client:idle />
@@ -37,41 +16,14 @@ import Graphics from "../components/Graphics.svelte";
         </span>
       </h1>
     </div>
+
     <div class="max-w-5xl w-full mx-auto py-5">
       <div class="grid grid-cols-3 gap-8 w-full">
-        <!-- Columna 1: Gráficos -->
-        <div
-          class="flex h-full flex-col justify-between items-center gap-4 py-2"
-        >
-          <Graphics
-            client:idle
-            color1="#4c56af"
-            color2="#af4ca8"
-            porcentaje={80}
-            titulo="Deep Learning"
-          />
-          <Graphics
-            client:idle
-            color1="#52EBBA"
-            color2="#52B7EB"
-            porcentaje={40}
-            titulo="Transferencia de Estilo"
-          />
-          <Graphics
-            client:idle
-            color1="#EB6C52"
-            color2="#EBC952"
-            porcentaje={60}
-            titulo="Otro Filtro"
-          />
-
-          />
-        </div>
+        <!-- Columna 1: Gráficos manejados por Svelte -->
+        <GraphicsContainer client:load />
 
         <!-- Columna 2: Imagen -->
-        <div
-          class="h-full flex items-center justify-center overflow-hidden rounded-xl shadow-lg bg-gray-100"
-        >
+        <div class="h-full flex items-center justify-center overflow-hidden rounded-xl shadow-lg bg-gray-100">
           <img
             id="uploaded-image"
             alt="Transacción Yape"

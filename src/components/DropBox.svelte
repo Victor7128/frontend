@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Dropzone } from "flowbite-svelte";
+  import { onMount } from "svelte";
 
   let files: FileList | null = null;
   let imageUrl: string | null = null;
@@ -7,44 +8,71 @@
   let errorMessage = "";
   let loading = false;
 
-  function isImageFile(file: File) {
-    return file.type.startsWith("image/");
-  }
+  const API_BASE_URL = "https://backend-qab1.onrender.com";
 
-  async function handleImageUpload(file: File) {
+  onMount(() => {
+    showError = false;
+  });
+
+  async function verifyYapeTransaction(file: File) {
     loading = true;
+    showError = false;
+
     try {
-      const reader = new FileReader();
-      reader.onload = function() {
-        sessionStorage.setItem('uploadedImage', reader.result as string);
-        window.location.href = "/resultados";
-      };
-      reader.readAsDataURL(file);
+      const imageDataPromise = new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${API_BASE_URL}/filter_yape`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorDetail = "Error al verificar la imagen";
+        try {
+          const errorData = await response.json();
+          errorDetail = errorData.detail || errorDetail;
+        } catch {
+          errorDetail = (await response.text()) || errorDetail;
+        }
+        handleError(errorDetail);
+        return;
+      }
+      sessionStorage.setItem("uploadedImage", await imageDataPromise);
+      window.location.href = "/resultados";
     } catch (error) {
-      showError = true;
-      errorMessage = "Error al procesar la imagen.";
-      setTimeout(() => (showError = false), 5000);
+      handleError("Error al procesar la imagen. Por favor, inténtalo de nuevo.");
     } finally {
       loading = false;
     }
   }
 
+  function handleError(message: string) {
+    showError = true;
+    errorMessage = message;
+    setTimeout(() => (showError = false), 5000);
+  }
+
+  function isImageFile(file: File) {
+    return file.type.startsWith("image/");
+  }
+
   $: if (files && files.length > 0) {
     const file = files[0];
     if (!isImageFile(file)) {
-      showError = true;
-      errorMessage = `${file.name} no es una imagen.`;
+      handleError(`${file.name} no es una imagen.`);
       imageUrl = null;
       files = null;
-      setTimeout(() => (showError = false), 5000);
     } else {
-      handleImageUpload(file);
+      setTimeout(() => verifyYapeTransaction(file), 100);
+      setTimeout(() => files = null, 1000);
     }
-  }
-
-  function reset() {
-    files = null;
-    imageUrl = null;
   }
 </script>
 
@@ -55,17 +83,17 @@
 
   {#if loading}
     <div class="loading-indicator">
-      <p>Procesando imagen...</p>
+      <p>Verificando transacción Yape...</p>
     </div>
   {:else}
     <Dropzone
-      bind:files={files}
+      bind:files
       accept="image/*"
       multiple={false}
       class="my-dropzone text-black/75"
     >
       <div class="content-center p-6">
-        <p>Haz clic o arrastra para subir una imagen</p>
+        <p>Haz clic o arrastra para subir una imagen de transacción Yape</p>
       </div>
     </Dropzone>
   {/if}
@@ -83,8 +111,8 @@
   }
   .alert-error {
     margin-bottom: 1rem;
-    padding: .75rem 1rem;
-    border-radius: .5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
     background: #fee2e2;
     color: #991b1b;
   }

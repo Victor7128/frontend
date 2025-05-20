@@ -3,11 +3,11 @@
 
   export let color1 = "#000";
   export let color2 = "#fff";
-  export let porcentaje = 0;
+  export let porcentaje: number;
   export let size = 100;
   export let strokeWidth = 15;
   export let duration = 800;
-  export let titulo = "";
+  export let titulo: string;
 
   // Cálculos derivados
   let radius = (size - strokeWidth) / 2;

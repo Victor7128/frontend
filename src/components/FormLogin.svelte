@@ -3,6 +3,7 @@
   import { validateToken } from "../services/authService";
 
   const API_BASE_URL = "https://backend-qab1.onrender.com";
+
   let identifier = "";
   let password = "";
   let error = "";
@@ -21,27 +22,21 @@
       access_token = token;
       token_type = "Bearer";
       session_id = sessionId;
-
-      // Verificamos si el token es válido antes de redirigir
       try {
         const isValid = await validateToken();
         if (isValid) {
           window.location.href = "/dashboard";
           return;
         } else {
-          // Si el token no es válido, lo eliminamos
           localStorage.removeItem("access_token");
           localStorage.removeItem("session_id");
         }
       } catch (err) {
         console.error("Error validando token:", err);
-        // Si hay error al validar, también eliminamos
         localStorage.removeItem("access_token");
         localStorage.removeItem("session_id");
       }
     }
-
-    // Si llegamos aquí, el usuario no está autenticado o el token es inválido
     checkingAuth = false;
   });
 
