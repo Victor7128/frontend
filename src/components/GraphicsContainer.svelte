@@ -2,12 +2,19 @@
   import { onMount } from "svelte";
   import Graphics from "./Graphics.svelte";
 
-  let filtroFuente = { porcentaje: 5, nombre: "" };
+  let filtroFuente = {
+    porcentaje: 0,
+    coincidencias: 0,
+    nombre: "Filtro de Fuente",
+  };
+
   let transferenciaEstilo = {
     porcentaje: 5,
+    coincidencias: 0,
     nombre: "Transferencia de Estilo",
   };
-  let otroFiltro = { porcentaje: 5, nombre: "Otro Filtro" };
+
+  let otroFiltro = { porcentaje: 5, coincidencias: 0, nombre: "Otro Filtro" };
 
   let loading = true;
   let error = null;
@@ -15,32 +22,23 @@
   const API_BASE_URL = "https://backend-qab1.onrender.com";
 
   onMount(async () => {
-    console.log("🚀 GraphicsContainer montado, iniciando carga...");
     await cargarDatos();
   });
 
   async function cargarDatos() {
+    loading = true;
+    error = null;
     try {
-      loading = true;
-      error = null;
-      console.log("📡 Iniciando carga de datos...");
-
       const token = localStorage.getItem("access_token");
       if (!token) {
-        console.log("❌ No hay token, redirigiendo...");
-        window.location.href = "/";
-        return;
+        return (window.location.href = "/");
       }
-
-      console.log("✅ Token encontrado, ejecutando análisis...");
-      await Promise.all([filtro_fuente()]);
-      console.log("🎉 Análisis completado!");
+      await filtro_fuente();
     } catch (err) {
       error = "Error al cargar los datos de análisis";
-      console.error("💥 Error en cargarDatos:", err);
+      console.error(err);
     } finally {
       loading = false;
-      console.log("⏹️ Carga finalizada, loading =", loading);
     }
   }
 
@@ -67,34 +65,26 @@
       const apiResponse = await fetch(`${API_BASE_URL}/filtro_fuente`, {
         method: "POST",
         body: formData,
-        headers: {
-        },
+        headers: {},
       });
 
       if (apiResponse.ok) {
         const data = await apiResponse.json();
-        console.log("📊 Datos del backend:", data);
-        const nuevoFiltroFuente = {
-          porcentaje: data.porcentaje || 5,
-          nombre: data.nombre || "Filtro de Fuente",
+        console.log("📊 Datos recibidos:", data);
+        filtroFuente = {
+          porcentaje: data.porcentaje ?? filtroFuente.porcentaje,
+          coincidencias: data.coincidencias ?? filtroFuente.coincidencias,
+          nombre: data.plantilla ?? filtroFuente.nombre,
         };
-
-        filtroFuente = nuevoFiltroFuente;
       } else {
-        const errorText = await apiResponse.text();
-        try {
-          const errorData = JSON.parse(errorText);
-          console.log("💥 Detalle del error:", errorData.detail);
-        } catch {
-          console.log("💥 Error no JSON:", errorText);
-        }
+        const text = await apiResponse.text();
+        console.error("💥 API Error:", text);
       }
     } catch (err) {
       console.error("💥 Error en filtro_fuente:", err);
     }
   }
 
-  // Función para recargar todos los análisis
   async function recargarAnalisis() {
     await cargarDatos();
   }
@@ -116,23 +106,16 @@
       </button>
     </div>
   {:else}
-    <Graphics
-      color1="#4c56af"
-      color2="#af4ca8"
-      porcentaje={filtroFuente.porcentaje}
-      titulo={filtroFuente.nombre}
-    />
-    <Graphics
-      color1="#52EBBA"
-      color2="#52B7EB"
-      porcentaje={transferenciaEstilo.porcentaje}
-      titulo={transferenciaEstilo.nombre}
-    />
-    <Graphics
-      color1="#EB6C52"
-      color2="#EBC952"
-      porcentaje={otroFiltro.porcentaje}
-      titulo={otroFiltro.nombre}
-    />
+    <div class="w-full h-full flex justify-around items-center">
+      <div class="overflow-hidden">
+        <Graphics
+          color1="#4c56af"
+          color2="#af4ca8"
+          porcentaje={filtroFuente.porcentaje}
+          titulo={filtroFuente.nombre}
+        />
+        <p class="text-white/75">{filtroFuente.coincidencias} coincidencias</p>
+      </div>
+    </div>
   {/if}
 </div>
