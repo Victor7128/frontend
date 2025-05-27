@@ -2,19 +2,11 @@
   import { onMount } from "svelte";
   import Graphics from "./Graphics.svelte";
 
-  let filtroFuente = {
+  let filtroPixeles = {
     porcentaje: 0,
     coincidencias: 0,
-    nombre: "Filtro de Fuente",
+    nombre: "Filtro de Pixeles",
   };
-
-  let transferenciaEstilo = {
-    porcentaje: 5,
-    coincidencias: 0,
-    nombre: "Transferencia de Estilo",
-  };
-
-  let otroFiltro = { porcentaje: 5, coincidencias: 0, nombre: "Otro Filtro" };
 
   let loading = true;
   let error = null;
@@ -62,7 +54,7 @@
       const formData = new FormData();
       formData.append("file", blob, "image.jpg");
 
-      const apiResponse = await fetch(`${API_BASE_URL}/filtro_fuente`, {
+      const apiResponse = await fetch(`${API_BASE_URL}/filtro_pixeles`, {
         method: "POST",
         body: formData,
         headers: {},
@@ -71,17 +63,17 @@
       if (apiResponse.ok) {
         const data = await apiResponse.json();
         console.log("📊 Datos recibidos:", data);
-        filtroFuente = {
-          porcentaje: data.porcentaje ?? filtroFuente.porcentaje,
-          coincidencias: data.coincidencias ?? filtroFuente.coincidencias,
-          nombre: data.plantilla ?? filtroFuente.nombre,
+        filtroPixeles = {
+          porcentaje: data.porcentaje ?? filtroPixeles.porcentaje,
+          coincidencias: data.coincidencias ?? filtroPixeles.coincidencias,
+          nombre: data.plantilla ?? filtroPixeles.nombre,
         };
       } else {
         const text = await apiResponse.text();
         console.error("💥 API Error:", text);
       }
     } catch (err) {
-      console.error("💥 Error en filtro_fuente:", err);
+      console.error("💥 Error en filtro_pixeles:", err);
     }
   }
 
@@ -111,10 +103,10 @@
         <Graphics
           color1="#4c56af"
           color2="#af4ca8"
-          porcentaje={filtroFuente.porcentaje}
-          titulo={filtroFuente.nombre}
+          porcentaje={filtroPixeles.porcentaje}
+          titulo={filtroPixeles.nombre}
         />
-        <p class="text-white/75">{filtroFuente.coincidencias} coincidencias</p>
+        <p class="text-white/75">{filtroPixeles.coincidencias} coincidencias</p>
       </div>
     </div>
   {/if}
