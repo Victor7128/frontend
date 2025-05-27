@@ -9,23 +9,18 @@
   export let duration = 800;
   export let titulo: string;
 
-  // Cálculos derivados
   let radius = (size - strokeWidth) / 2;
   let circumference = 2 * Math.PI * radius;
   const outerRadius = radius + strokeWidth / 2 + 1; // +1px extra para el borde
   const borderWidth = 1;
   const innerBorderRadius = radius - strokeWidth / 2 - borderWidth / 2; // -1px extra para el borde
 
-  // Usar spring con la API actualizada
   const animated = spring(0, { stiffness: 0.15, damping: 0.4 });
 
-  // Actualizar el valor animado cuando cambia porcentaje
   $: animated.set(Math.max(0, Math.min(100, porcentaje)));
 
-  // dashOffset reactivo
   $: dashOffset = circumference * (1 - $animated / 100);
 
-  // Gradiente único
   const gradientId = `grad-${Math.random().toString(36).slice(2, 8)}`;
 
   function describeArc(cx: number, cy: number, r: number) {
@@ -40,7 +35,6 @@
 <svg width={size} height={size} viewBox={`-2 -2 ${size + 4} ${size + 4}`}>
   <defs>
     <linearGradient id={gradientId}>
-      <!-- Enlaza aquí los colores -->
       <stop offset="0%" stop-color={color1} />
       <stop offset="100%" stop-color={color2} />
     </linearGradient>
@@ -103,7 +97,7 @@
     fill="#BFBFBF"
   >
     {#if $animated}
-      <tspan>{$animated.toFixed(0)}%</tspan>
+      <tspan class="text-base font-bold">{$animated.toFixed(2)}%</tspan>
     {/if}
   </text>
 </svg>
