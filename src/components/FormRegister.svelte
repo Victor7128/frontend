@@ -65,7 +65,7 @@
   }
 </script>
 
-<div class="bg-black p-8 rounded-lg border border-white/75 w-96 max-w-full">
+<div class="p-8 rounded-lg border border-white/75 w-96 max-w-full">
   <h1 class="text-2xl font-bold mb-6 text-center text-white/75">
     Crear cuenta
   </h1>
@@ -80,7 +80,7 @@
 
   {#if success}
     <div
-      class="mb-4 p-3 bg-black border border-green-800 text-green-500 text-center rounded-md"
+      class="mb-4 p-3 border border-green-800 text-green-500 text-center rounded-md"
     >
       ¡Registro exitoso! Redirigiendo al inicio de sesión...
     </div>

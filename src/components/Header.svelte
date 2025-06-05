@@ -96,7 +96,7 @@
 <svelte:window on:click={handleClickOutside} />
 
 <header
-  class="relative w-full flex justify-between items-center p-5"
+  class="relative w-full flex justify-between items-center pt-5 px-5"
 >
   <a href="/dashboard" class="text-3xl font-semibold text-white/75">FraudVision</a>
 

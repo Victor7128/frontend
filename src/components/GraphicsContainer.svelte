@@ -17,6 +17,12 @@
     exif: {},
   };
 
+  let filtroSSIM = {
+    promedio_similitud: null,
+    imagenes_comparadas: 0,
+    imagenes_con_alta_coincidencia: 0
+  };
+
   let loading = true;
   let error = null;
 
@@ -34,55 +40,12 @@
       if (!token) {
         return (window.location.href = "/");
       }
-      await Promise.all([filtro_fuente(), filtro_exif()]);
+      await Promise.all([filtro_pixeles(), filtro_exif(), filtro_SSIM()]);
     } catch (err) {
       error = "Error al cargar los datos de análisis";
       console.error(err);
     } finally {
       loading = false;
-    }
-  }
-
-  async function filtro_fuente() {
-    try {
-      const uploadedImage = sessionStorage.getItem("uploadedImage");
-      if (!uploadedImage) {
-        return;
-      }
-      const base64Data = uploadedImage.split(",")[1];
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "image/jpeg" });
-
-      const formData = new FormData();
-      formData.append("file", blob, "image.jpg");
-
-      const apiResponse = await fetch(`${API_BASE_URL}/filtro_pixeles`, {
-        method: "POST",
-        body: formData,
-        headers: {},
-      });
-
-      if (apiResponse.ok) {
-        const data = await apiResponse.json();
-        console.log("📊 Datos filtro pixeles:", data);
-        filtroPixeles = {
-          porcentaje: data.porcentaje ?? filtroPixeles.porcentaje,
-          coincidencias: data.coincidencias ?? filtroPixeles.coincidencias,
-          nombre: data.plantilla ?? filtroPixeles.nombre,
-        };
-      } else {
-        const text = await apiResponse.text();
-        console.error("💥 API Error filtro pixeles:", text);
-      }
-    } catch (err) {
-      console.error("💥 Error en filtro_pixeles:", err);
     }
   }
 
@@ -177,11 +140,93 @@
     }
   }
 
+  async function filtro_SSIM() {
+    try {
+      const uploadedImage = sessionStorage.getItem("uploadedImage");
+      if (!uploadedImage) {
+        console.error("❌ No hay imagen en sessionStorage");
+        return;
+      }
+
+      const base64Data = uploadedImage.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+
+      const apiResponse = await fetch(`${API_BASE_URL}/filtro_ssim`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        filtroSSIM = {
+          promedio_similitud: data.promedio_similitud,
+          imagenes_comparadas: data.imagenes_comparadas,
+          imagenes_con_alta_coincidencia: data.imagenes_con_alta_coincidencia
+        };
+      } else {
+        console.error("💥 API Error filtro SSIM:", await apiResponse.text());
+      }
+    } catch (err) {
+      console.error("💥 Error en filtro_SSIM:", err);
+    }
+  }
+
+  async function filtro_pixeles() {
+    try {
+      const uploadedImage = sessionStorage.getItem("uploadedImage");
+      if (!uploadedImage) {
+        return;
+      }
+      const base64Data = uploadedImage.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+
+      const apiResponse = await fetch(`${API_BASE_URL}/filtro_pixeles`, {
+        method: "POST",
+        body: formData,
+        headers: {},
+      });
+
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        console.log("📊 Datos filtro pixeles:", data);
+        filtroPixeles = {
+          porcentaje: data.porcentaje ?? filtroPixeles.porcentaje,
+          coincidencias: data.coincidencias ?? filtroPixeles.coincidencias,
+          nombre: data.plantilla ?? filtroPixeles.nombre,
+        };
+      } else {
+        const text = await apiResponse.text();
+        console.error("💥 API Error filtro pixeles:", text);
+      }
+    } catch (err) {
+      console.error("💥 Error en filtro_pixeles:", err);
+    }
+  }
+
   async function recargarAnalisis() {
     await cargarDatos();
   }
 
-  // Función para formatear los datos EXIF para mostrar
   function formatearExif(exifData) {
     const formatosImportantes = [
       "Make",
@@ -217,13 +262,16 @@
       <div class="flex justify-around w-full">
         <div>
           <Graphics
-            color1="#20F795"
-            color2="#F7C320"
-            porcentaje={68.4}
-            titulo={"Filtro ejemplo"}
+            color1="#FC7656"
+            color2="#FCC656"
+            porcentaje={filtroSSIM.promedio_similitud}
+            titulo={"Filtro SSIM"}
           />
           <p class="text-white/75 mt-2 text-sm">
-            {425} coincidencias
+            {filtroSSIM.imagenes_comparadas} Imagenes comparadas
+          </p>
+          <p class="text-white/75 mt-2 text-sm">
+            {filtroSSIM.imagenes_con_alta_coincidencia} Con alta coincidencia
           </p>
         </div>
         <div>
@@ -234,7 +282,7 @@
             titulo={filtroPixeles.nombre}
           />
           <p class="text-white/75 mt-2 text-sm">
-            {filtroPixeles.coincidencias} coincidencias
+            {filtroPixeles.coincidencias} Coincidencias
           </p>
         </div>
       </div>
@@ -249,7 +297,7 @@
               d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
             />
           </svg>
-          Análisis de Metadatos EXIF
+          Análisis de Metadatos
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
