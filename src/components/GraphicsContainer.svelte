@@ -5,7 +5,7 @@
   let filtroPixeles = {
     porcentaje: 0,
     coincidencias: 0,
-    nombre: "Filtro de Pixeles",
+    nombre: "Filtro de Píxeles",
   };
 
   let filtroExif = {
@@ -20,10 +20,25 @@
   let filtroSSIM = {
     promedio_similitud: null,
     imagenes_comparadas: 0,
-    imagenes_con_alta_coincidencia: 0
+    imagenes_con_alta_coincidencia: 0,
+  };
+
+  let filtroRuido = {
+    porcentaje_veracidad: "0%",
+    similitud_promedio: "0%",
+    mejor_similitud: "0%",
+    plantilla_coincidente: "Ninguna",
+    caracteristicas_detectadas: {
+      area_morada: "0%",
+      densidad_bordes: "0",
+      forma_rectangular: false,
+    },
+    nombre: "Filtro de Ruido",
   };
 
   let loading = true;
+  let loadingSSIM = false;
+  let loadingRuido = false;
   let error = null;
 
   const API_BASE_URL = "https://backend-qab1.onrender.com";
@@ -40,12 +55,154 @@
       if (!token) {
         return (window.location.href = "/");
       }
-      await Promise.all([filtro_pixeles(), filtro_exif(), filtro_SSIM()]);
+      // Espera todos los filtros menos SSIM
+      await Promise.all([filtro_pixeles(), filtro_exif(), filtro_ruido()]);
+      // Espera SSIM (por separado, después)
+      await filtro_SSIM();
+
+      // Ahora sí, SSIM tiene valor
+      const filtrosPorcentajes = {
+        ssim: filtroSSIM.promedio_similitud
+          ? parseFloat(filtroSSIM.promedio_similitud)
+          : 0,
+        pixeles: filtroPixeles.porcentaje
+          ? parseFloat(filtroPixeles.porcentaje)
+          : 0,
+        ruido: filtroRuido.porcentaje_veracidad
+          ? parseFloat(filtroRuido.porcentaje_veracidad.replace("%", ""))
+          : 0,
+      };
+      sessionStorage.setItem(
+        "filtrosPorcentajes",
+        JSON.stringify(filtrosPorcentajes),
+      );
+      window.dispatchEvent(new Event("filtrosActualizados"));
     } catch (err) {
       error = "Error al cargar los datos de análisis";
       console.error(err);
     } finally {
       loading = false;
+    }
+  }
+
+  async function filtro_ruido() {
+    const uploadedImage = sessionStorage.getItem("uploadedImage");
+    if (!uploadedImage) {
+      console.error("❌ No hay imagen en sessionStorage para filtro ruido");
+      return;
+    }
+
+    loadingRuido = true;
+    try {
+      const base64Data = uploadedImage.split(",")[1];
+      const mimeType = uploadedImage.split(",")[0].split(":")[1].split(";")[0];
+
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+
+      const apiResponse = await fetch(
+        `${API_BASE_URL}/filtro_ruido_detallado`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(errorData.detail || "Error en el análisis de ruido");
+      }
+
+      const result = await apiResponse.json();
+
+      filtroRuido = {
+        porcentaje_veracidad: result.porcentaje_veracidad || "0%",
+        similitud_promedio: result.similitud_promedio || "0%",
+        mejor_similitud: result.mejor_similitud || "0%",
+        plantilla_coincidente: result.plantilla_coincidente || "Ninguna",
+        caracteristicas_detectadas: result.caracteristicas_detectadas || {
+          area_morada: "0%",
+          densidad_bordes: "0",
+          forma_rectangular: false,
+        },
+        nombre: "Filtro de Ruido",
+      };
+      sessionStorage.setItem(
+        "porcentajeRuido",
+        filtroRuido.porcentaje_veracidad.toString(),
+      );
+    } catch (err) {
+      console.error("💥 Error en filtro_ruido:", err);
+      filtroRuido.nombre = "Filtro de Ruido (Error)";
+    } finally {
+      loadingRuido = false;
+    }
+  }
+
+  async function filtro_SSIM() {
+    loadingSSIM = true;
+    try {
+      const uploadedImage = sessionStorage.getItem("uploadedImage");
+      if (!uploadedImage) {
+        console.error("❌ No hay imagen en sessionStorage");
+        return;
+      }
+
+      const base64Data = uploadedImage.split(",")[1];
+      const mimeType = uploadedImage.split(",")[0].split(":")[1].split(";")[0];
+
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+
+      let apiResponse = await fetch(
+        `${API_BASE_URL}/filtro_ssim_ultra?precision=fast`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!apiResponse.ok && apiResponse.status === 404) {
+        apiResponse = await fetch(`${API_BASE_URL}/filtro_ssim`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        filtroSSIM = {
+          promedio_similitud: data.promedio_similitud,
+          imagenes_comparadas: data.imagenes_comparadas,
+          imagenes_con_alta_coincidencia: data.imagenes_con_alta_coincidencia,
+        };
+        sessionStorage.setItem(
+          "porcentajeSSIM",
+          filtroSSIM.promedio_similitud.toString(),
+        );
+      } else {
+        console.error("💥 API Error filtro SSIM:", await apiResponse.text());
+      }
+    } catch (err) {
+      console.error("💥 Error en filtro_SSIM:", err);
+    } finally {
+      loadingSSIM = false;
     }
   }
 
@@ -57,9 +214,8 @@
         return;
       }
 
-      // Mejorar la conversión base64 a blob
       const base64Data = uploadedImage.split(",")[1];
-      const mimeType = uploadedImage.split(",")[0].split(":")[1].split(";")[0]; // Extraer MIME type correcto
+      const mimeType = uploadedImage.split(",")[0].split(":")[1].split(";")[0];
 
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
@@ -69,12 +225,7 @@
       }
 
       const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType }); // Usar MIME type correcto
-
-      console.log("📁 Blob creado:", {
-        size: blob.size,
-        type: blob.type,
-      });
+      const blob = new Blob([byteArray], { type: mimeType });
 
       const formData = new FormData();
       formData.append("file", blob, "image.jpg");
@@ -82,15 +233,10 @@
       const apiResponse = await fetch(`${API_BASE_URL}/filtro_exif`, {
         method: "POST",
         body: formData,
-        headers: {}, // No añadir Content-Type manualmente con FormData
       });
-
-      console.log("🌐 Response status:", apiResponse.status);
 
       if (apiResponse.ok) {
         const data = await apiResponse.json();
-        console.log("📊 Datos filtro EXIF completos:", data);
-
         filtroExif = {
           archivo: data.archivo || "Sin nombre",
           mensaje: data.mensaje || "Análisis completado",
@@ -100,7 +246,6 @@
           exif: data.exif || {},
         };
       } else {
-        // Mejorar el manejo de errores
         const contentType = apiResponse.headers.get("content-type");
         let errorDetail = "Error desconocido";
 
@@ -117,7 +262,6 @@
           detail: errorDetail,
         });
 
-        // Establecer valores por defecto más informativos
         filtroExif = {
           archivo: "image.jpg",
           mensaje: `❌ Error ${apiResponse.status}: ${errorDetail}`,
@@ -128,7 +272,6 @@
         };
       }
     } catch (err) {
-      console.error("💥 Error en filtro_exif:", err);
       filtroExif = {
         archivo: "image.jpg",
         mensaje: `❌ Error de conexión: ${err.message}`,
@@ -137,46 +280,6 @@
         info_imagen: {},
         exif: {},
       };
-    }
-  }
-
-  async function filtro_SSIM() {
-    try {
-      const uploadedImage = sessionStorage.getItem("uploadedImage");
-      if (!uploadedImage) {
-        console.error("❌ No hay imagen en sessionStorage");
-        return;
-      }
-
-      const base64Data = uploadedImage.split(",")[1];
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "image/jpeg" });
-
-      const formData = new FormData();
-      formData.append("file", blob, "image.jpg");
-
-      const apiResponse = await fetch(`${API_BASE_URL}/filtro_ssim`, {
-        method: "POST",
-        body: formData
-      });
-
-      if (apiResponse.ok) {
-        const data = await apiResponse.json();
-        filtroSSIM = {
-          promedio_similitud: data.promedio_similitud,
-          imagenes_comparadas: data.imagenes_comparadas,
-          imagenes_con_alta_coincidencia: data.imagenes_con_alta_coincidencia
-        };
-      } else {
-        console.error("💥 API Error filtro SSIM:", await apiResponse.text());
-      }
-    } catch (err) {
-      console.error("💥 Error en filtro_SSIM:", err);
     }
   }
 
@@ -203,17 +306,19 @@
       const apiResponse = await fetch(`${API_BASE_URL}/filtro_pixeles`, {
         method: "POST",
         body: formData,
-        headers: {},
       });
 
       if (apiResponse.ok) {
         const data = await apiResponse.json();
-        console.log("📊 Datos filtro pixeles:", data);
         filtroPixeles = {
           porcentaje: data.porcentaje ?? filtroPixeles.porcentaje,
           coincidencias: data.coincidencias ?? filtroPixeles.coincidencias,
           nombre: data.plantilla ?? filtroPixeles.nombre,
         };
+        sessionStorage.setItem(
+          "porcentajePixeles",
+          filtroPixeles.porcentaje.toString(),
+        );
       } else {
         const text = await apiResponse.text();
         console.error("💥 API Error filtro pixeles:", text);
@@ -225,6 +330,7 @@
 
   async function recargarAnalisis() {
     await cargarDatos();
+    await filtro_SSIM();
   }
 
   function formatearExif(exifData) {
@@ -238,9 +344,19 @@
       .filter(([key]) => formatosImportantes.includes(key))
       .slice(0, 4);
   }
+
+  function extractPercentage(percentageString) {
+    if (!percentageString) return 0;
+    return parseFloat(percentageString.replace("%", ""));
+  }
+
+  // Auto-ejecutar SSIM cuando los datos base estén cargados
+  $: if (!loading && !loadingSSIM && filtroSSIM.promedio_similitud === null) {
+    filtro_SSIM();
+  }
 </script>
 
-<div class="flex h-full flex-col gap-6 py-4">
+<div class="flex h-full flex-col gap-4">
   {#if loading}
     <div class="flex items-center justify-center h-full">
       <div class="text-white/75">Cargando análisis...</div>
@@ -256,24 +372,39 @@
       </button>
     </div>
   {:else}
-    <!-- Contenedor principal con diseño vertical -->
-    <div class="flex flex-col items-center gap-5 w-full max-w-4xl mx-auto">
-      <!-- Gráfico de filtro de píxeles -->
-      <div class="flex justify-around w-full">
-        <div>
+    <div class="flex flex-col items-center gap-4 w-full max-w-4xl mx-auto">
+      <!-- Gráficos de filtros -->
+      <div class="flex justify-around w-full bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+        <!-- Filtro SSIM -->
+        <div class="relative">
+          {#if loadingSSIM}
+            <div
+              class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-10"
+            >
+              <div
+                class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
+              ></div>
+            </div>
+          {/if}
+
           <Graphics
             color1="#FC7656"
             color2="#FCC656"
             porcentaje={filtroSSIM.promedio_similitud}
             titulo={"Filtro SSIM"}
           />
-          <p class="text-white/75 mt-2 text-sm">
-            {filtroSSIM.imagenes_comparadas} Imagenes comparadas
-          </p>
-          <p class="text-white/75 mt-2 text-sm">
-            {filtroSSIM.imagenes_con_alta_coincidencia} Con alta coincidencia
-          </p>
+
+          <div class="mt-2 text-center">
+            <p class="text-white/75 text-xs">
+              {filtroSSIM.imagenes_comparadas} comparadas
+            </p>
+            <p class="text-white/75 text-xs">
+              {filtroSSIM.imagenes_con_alta_coincidencia} coincidencias
+            </p>
+          </div>
         </div>
+
+        <!-- Filtro de Píxeles -->
         <div>
           <Graphics
             color1="#4c56af"
@@ -281,13 +412,42 @@
             porcentaje={filtroPixeles.porcentaje}
             titulo={filtroPixeles.nombre}
           />
-          <p class="text-white/75 mt-2 text-sm">
+          <p class="text-white/75 mt-2 text-xs text-center">
             {filtroPixeles.coincidencias} Coincidencias
           </p>
         </div>
+
+        <!-- Filtro de Ruido -->
+        <div class="relative">
+          {#if loadingRuido}
+            <div
+              class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-10"
+            >
+              <div
+                class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
+              ></div>
+            </div>
+          {/if}
+
+          <Graphics
+            color1="#5CF283"
+            color2="#5CF2E9"
+            porcentaje={extractPercentage(filtroRuido.porcentaje_veracidad)}
+            titulo={filtroRuido.nombre}
+          />
+
+          <div class="mt-2 text-center">
+            <p class="text-white/75 text-xs">
+              Similitud: {filtroRuido.similitud_promedio}
+            </p>
+            <p class="text-white/75 text-xs">
+              Plantilla: {filtroRuido.plantilla_coincidente}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <!-- Información del filtro EXIF organizada en tarjetas -->
+      <!-- Filtro EXIF (mantenido igual) -->
       <div class="w-full max-w-3xl">
         <h2
           class="text-white font-bold text-xl mb-4 text-center flex items-center justify-start gap-2"
@@ -395,7 +555,7 @@
           </div>
         </div>
 
-        <!-- Sección de Metadatos EXIF (ancho completo si hay datos) -->
+        <!-- Metadatos EXIF -->
         {#if Object.keys(filtroExif.exif).length > 0}
           <div class="mt-4 bg-white/10 p-4 rounded-lg backdrop-blur-sm">
             <h3 class="text-white font-semibold mb-3 flex items-center gap-2">
@@ -427,7 +587,7 @@
           </div>
         {/if}
 
-        <!-- Sección de Coordenadas GPS (si existen) -->
+        <!-- Coordenadas GPS -->
         {#if filtroExif.exif?.GPS}
           <div class="mt-4 bg-white/10 p-4 rounded-lg backdrop-blur-sm">
             <h3 class="text-white font-semibold mb-3 flex items-center gap-2">

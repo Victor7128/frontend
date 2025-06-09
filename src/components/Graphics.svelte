@@ -101,7 +101,7 @@
     {/if}
   </text>
 </svg>
-<div class="text-center font-semibold text-white/75">{titulo}</div>
+<div class="text-center font-semibold text-white/75 pt-2">{titulo}</div>
 
 <style>
   svg {
