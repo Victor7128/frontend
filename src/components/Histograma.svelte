@@ -1,0 +1,149 @@
+<script>
+  import { onMount } from "svelte";
+  import Chart from "chart.js/auto";
+
+  let chart;
+  let canvas;
+  let error = "";
+  let cargando = true;
+
+  const API_BASE_URL = "https://backend-qab1.onrender.com";
+
+  async function loadData() {
+    const uploadedImage = sessionStorage.getItem("uploadedImage");
+    if (!uploadedImage) {
+      error = "No hay imagen en sessionStorage";
+      cargando = false;
+      return { rojo: [], verde: [], azul: [] };
+    }
+    try {
+      const base64Data = uploadedImage.split(",")[1];
+      const mimeType = uploadedImage.split(",")[0].split(":")[1].split(";")[0];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+
+      const apiResponse = await fetch(`${API_BASE_URL}/histograma`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(errorData.detail || "Error en el análisis de histograma");
+      }
+
+      const result = await apiResponse.json();
+      return {
+        rojo: result.r,
+        verde: result.g,
+        azul: result.b,
+      };
+    } catch (err) {
+      error = "No se pudo cargar el histograma: " + err.message;
+      return { rojo: [], verde: [], azul: [] };
+    } finally {
+      cargando = false;
+    }
+  }
+
+  onMount(async () => {
+    const histograma = await loadData();
+    if (
+      histograma.rojo?.length &&
+      histograma.verde?.length &&
+      histograma.azul?.length &&
+      canvas
+    ) {
+      chart = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: Array.from({ length: 256 }, (_, i) => i),
+          datasets: [
+            {
+              label: "Rojo",
+              data: histograma.rojo,
+              backgroundColor: "rgba(255,99,132,0.6)",
+              borderRadius: 4, // Bordes redondeados
+              barPercentage: 1.2, // Barras más anchas
+              categoryPercentage: 1.0
+            },
+            {
+              label: "Verde",
+              data: histograma.verde,
+              backgroundColor: "rgba(75,192,192,0.6)",
+              borderRadius: 4,
+              barPercentage: 1.2,
+              categoryPercentage: 1.0
+            },
+            {
+              label: "Azul",
+              data: histograma.azul,
+              backgroundColor: "rgba(54,162,235,0.6)",
+              borderRadius: 4,
+              barPercentage: 1.2,
+              categoryPercentage: 1.0
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: "rgba(255,255,255,0.75)",
+                font: { size: 16, weight: "bold", family: "'Inter', sans-serif" }
+              }
+            },
+            title: {
+              display: true,
+              text: "Histograma de Colores",
+              color: "rgba(255,255,255,0.85)",
+              font: { size: 24, weight: "bold", family: "'Inter', sans-serif" }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "rgba(255,255,255,0.75)", font: { family: "'Inter', sans-serif" } },
+              grid: {
+                color: "rgba(255,255,255,0.11)",
+                lineWidth: 2, // MÁS GRUESO
+                borderDash: [4, 2]
+              }
+            },
+            y: {
+              ticks: { color: "rgba(255,255,255,0.75)", font: { family: "'Inter', sans-serif" } },
+              grid: {
+                color: "rgba(255,255,255,0.11)",
+                lineWidth: 2,
+                borderDash: [4, 2]
+              }
+            }
+          }
+        },
+      });
+    } else {
+      error = "El histograma llegó vacío o con error.";
+    }
+    return () => chart && chart.destroy();
+  });
+</script>
+
+<div class="w-full h-auto mx-auto text-white/75 bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+  {#if cargando}
+    <p class="text-center font-bold mb-2">Cargando histograma...</p>
+  {:else if error}
+    <p class="text-center font-bold text-red-200">{error}</p>
+  {/if}
+  <canvas
+    bind:this={canvas}
+    class="w-full h-72 bg-transparent text-white/75"
+  ></canvas>
+</div>
