@@ -171,19 +171,12 @@
       formData.append("file", blob, "image.jpg");
 
       let apiResponse = await fetch(
-        `${API_BASE_URL}/filtro_ssim_ultra?precision=fast`,
+        `${API_BASE_URL}/filtro_ssim?precision=fast`,
         {
           method: "POST",
           body: formData,
         },
       );
-
-      if (!apiResponse.ok && apiResponse.status === 404) {
-        apiResponse = await fetch(`${API_BASE_URL}/filtro_ssim`, {
-          method: "POST",
-          body: formData,
-        });
-      }
 
       if (apiResponse.ok) {
         const data = await apiResponse.json();
@@ -374,7 +367,9 @@
   {:else}
     <div class="flex flex-col items-center gap-4 w-full max-w-4xl mx-auto">
       <!-- Gráficos de filtros -->
-      <div class="flex justify-around w-full bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+      <div
+        class="flex justify-around w-full bg-white/10 p-4 rounded-lg backdrop-blur-sm"
+      >
         <!-- Filtro SSIM -->
         <div class="relative">
           {#if loadingSSIM}
