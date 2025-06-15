@@ -3,9 +3,9 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.svelte";
 import GraphicsContainer from "../components/GraphicsContainer.svelte";
 import Final from "../components/Final.svelte";
-import Histograma from "../components/Histograma.svelte";
+import Detalles from "../components/Detalles.svelte";
 ---
-
+  
 <Layout>
   <Header client:idle />
   <main class="relative h-screen flex flex-col">
@@ -52,6 +52,7 @@ import Histograma from "../components/Histograma.svelte";
           <div class="">
             <a
               href="/dashboard"
+              id="choose-another-image"
               class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/75 text-black 
                      hover:bg-transparent hover:text-white/75 transition-all duration-200 
                      border hover:border-white/75 font-medium shadow-lg hover:shadow-xl"
@@ -66,8 +67,10 @@ import Histograma from "../components/Histograma.svelte";
 
         <!-- Columna 3: Análisis Final -->        
         <div class="h-full flex flex-col items-center justify-between overflow-hidden">
-          <Final client:load />
-          <Histograma client:load />
+          <div class="flex justify-between items-center">
+            <Final client:load />
+          </div>
+          <Detalles client:load />
         </div>
       </div>
     </div>
@@ -77,11 +80,11 @@ import Histograma from "../components/Histograma.svelte";
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const uploadedImage = sessionStorage.getItem("uploadedImage");
-    const imageElement = document.getElementById('analyzed-image') as HTMLImageElement;
+    const imageElement = document.getElementById('analyzed-image');
     const placeholder = document.getElementById('image-placeholder');
     
     if (uploadedImage && imageElement) {
-      imageElement.src = uploadedImage;
+      (imageElement as HTMLImageElement).src = uploadedImage;
       imageElement.onload = () => {
         imageElement.classList.remove('hidden');
         if (placeholder) {
@@ -102,6 +105,18 @@ import Histograma from "../components/Histograma.svelte";
           `;
         }
       };
+    }
+
+    // Limpiar porcentajes del sessionStorage al elegir otra imagen
+    const chooseBtn = document.getElementById('choose-another-image');
+    if (chooseBtn) {
+      chooseBtn.addEventListener('click', function() {
+        sessionStorage.removeItem("porcentajePixeles");
+        sessionStorage.removeItem("porcentajeRuido");
+        sessionStorage.removeItem("porcentajeHistograma");
+        sessionStorage.removeItem("porcentajeSSIM");
+        sessionStorage.removeItem("filtrosPorcentajes");
+      });
     }
   });
 </script>

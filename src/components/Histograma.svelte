@@ -6,6 +6,8 @@
   let canvas;
   let error = "";
   let cargando = true;
+  let porcentajeHistograma = null; // <-- AQUÍ!
+  let similitud = null;
 
   const API_BASE_URL = "https://backend-qab1.onrender.com";
 
@@ -41,6 +43,12 @@
       }
 
       const result = await apiResponse.json();
+      porcentajeHistograma = result.similitud
+        ? parseFloat(result.similitud)
+        : 0;
+      sessionStorage.setItem("porcentajeHistograma", porcentajeHistograma?.toString());
+      window.dispatchEvent(new Event("filtrosActualizados"));
+
       return {
         rojo: result.r,
         verde: result.g,
@@ -48,6 +56,7 @@
       };
     } catch (err) {
       error = "No se pudo cargar el histograma: " + err.message;
+      porcentajeHistograma = null;
       return { rojo: [], verde: [], azul: [] };
     } finally {
       cargando = false;
@@ -71,8 +80,8 @@
               label: "Rojo",
               data: histograma.rojo,
               backgroundColor: "rgba(255,99,132,0.6)",
-              borderRadius: 4, // Bordes redondeados
-              barPercentage: 1.2, // Barras más anchas
+              borderRadius: 4,
+              barPercentage: 1.2,
               categoryPercentage: 1.0
             },
             {
@@ -114,7 +123,7 @@
               ticks: { color: "rgba(255,255,255,0.75)", font: { family: "'Inter', sans-serif" } },
               grid: {
                 color: "rgba(255,255,255,0.11)",
-                lineWidth: 2, // MÁS GRUESO
+                lineWidth: 2,
                 borderDash: [4, 2]
               }
             },
@@ -142,8 +151,15 @@
   {:else if error}
     <p class="text-center font-bold text-red-200">{error}</p>
   {/if}
+  {#if porcentajeHistograma !== null}
+    <div class="w-full mb-4 text-center">
+      <span class="inline-block font-bold text-lg text-green-300 bg-green-800/40 rounded px-3 py-1">
+        Similitud con la plantilla: {porcentajeHistograma}%
+      </span>
+    </div>
+  {/if}
   <canvas
     bind:this={canvas}
-    class="w-full h-72 bg-transparent text-white/75"
+    class="w-full bg-transparent text-white/75"
   ></canvas>
 </div>

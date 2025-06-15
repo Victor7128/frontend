@@ -1,79 +1,52 @@
 <script>
     import { onMount } from "svelte";
 
-    // Estado reactivo
-    let loading = false;
     let error = null;
     let porcentajes = {
-        ssim: 0,
         pixeles: 0,
         ruido: 0,
+        histograma: 0,
     };
     let promedioFinal = 0;
     let hasImage = false;
+    let allReady = false;
 
-    // Verificar si hay imagen en sessionStorage al montar el componente
     onMount(() => {
         checkForImage();
         cargarPorcentajes();
     });
 
-    // Función para cargar los porcentajes desde sessionStorage
     function cargarPorcentajes() {
-        const porcentajesGuardados =
-            sessionStorage.getItem("filtrosPorcentajes");
-        if (porcentajesGuardados) {
-            try {
-                const datos = JSON.parse(porcentajesGuardados);
-                porcentajes = {
-                    ssim: datos.ssim || 0,
-                    pixeles: datos.pixeles || 0,
-                    ruido: datos.ruido || 0,
-                };
+        const pixeles = parseFloat(sessionStorage.getItem("porcentajePixeles")) || 0;
+        const ruido = parseFloat(sessionStorage.getItem("porcentajeRuido")) || 0;
+        const histograma = parseFloat(sessionStorage.getItem("porcentajeHistograma")) || 0;
 
-                // Calcular promedio
-                promedioFinal =
-                    Math.round(
-                        ((porcentajes.ssim +
-                            porcentajes.pixeles +
-                            porcentajes.ruido) /
-                            3) *
-                            100,
-                    ) / 100;
-                // console.log(
-                //     `${porcentajes.ssim} + ${porcentajes.pixeles} + ${porcentajes.ruido} = ${porcentajes.ssim + porcentajes.pixeles + porcentajes.ruido}`,
-                // );
-                // console.log(
-                //     "Resultado de promediar porcentajes:",
-                //     promedioFinal,
-                // );
-            } catch (error) {
-                console.error("❌ Error al cargar porcentajes:", error);
-            }
+        porcentajes = { pixeles, ruido, histograma };
+        allReady = (pixeles > 0 && ruido > 0 && histograma > 0);
+
+        const valores = [pixeles, ruido, histograma].filter(v => v > 0);
+        if (valores.length > 0) {
+            promedioFinal = Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) * 100) / 100;
+        } else {
+            promedioFinal = 0;
         }
     }
 
-    // Función para verificar si hay imagen
     async function checkForImage() {
         const uploadedImage = sessionStorage.getItem("uploadedImage");
         hasImage = !!uploadedImage;
-
-        // Si hay imagen, cargar porcentajes
         if (hasImage) {
             cargarPorcentajes();
         }
     }
 
-    // Escuchar cambios en sessionStorage
     async function handleStorageChange() {
         await checkForImage();
         cargarPorcentajes();
     }
 
-    // Listener para cambios en sessionStorage
     onMount(() => {
         window.addEventListener("storage", handleStorageChange);
-        // También escuchar eventos personalizados para cambios en la misma pestaña
         window.addEventListener("imageUploaded", handleStorageChange);
         window.addEventListener("filtrosActualizados", handleStorageChange);
 
@@ -87,34 +60,29 @@
         };
     });
 
-    // Función para obtener el color del porcentaje
     function getPercentageColor(percentage) {
-        if (percentage >= 75) return "text-green-400";
-        if (percentage >= 50) return "text-yellow-400";
-        if (percentage >= 25) return "text-orange-400";
+        if (percentage >= 95) return "text-green-400";
+        if (percentage >= 90) return "text-yellow-400";
+        if (percentage >= 85) return "text-orange-400";
         return "text-red-400";
     }
 
-    // Función para obtener el color de fondo del porcentaje
     function getPercentageBgColor(percentage) {
-        if (percentage >= 75) return "bg-green-500/20 border-green-500/30";
-        if (percentage >= 50) return "bg-yellow-500/20 border-yellow-500/30";
-        if (percentage >= 25) return "bg-orange-500/20 border-orange-500/30";
+        if (percentage >= 95) return "bg-green-500/20 border-green-500/30";
+        if (percentage >= 90) return "bg-yellow-500/20 border-yellow-500/30";
+        if (percentage >= 85) return "bg-orange-500/20 border-orange-500/30";
         return "bg-red-500/20 border-red-500/30";
     }
 
-    // Función para obtener mensaje de veracidad
     function getVeracityMessage(percentage) {
-        if (percentage >= 80) return "✅ Imagen muy probablemente auténtica";
-        if (percentage >= 60) return "✅ Imagen probablemente auténtica";
-        if (percentage >= 40) return "⚠️ Algunos indicadores sospechosos";
-        if (percentage >= 20) return "🔍 Alta probabilidad de manipulación";
-        return "❌ Muy probable que sea falsa";
+        if (percentage >= 95) return "✅ Imagen probablemente auténtica";
+        if (percentage >= 90) return "⚠️ Algunos indicadores sospechosos";
+        if (percentage >= 85) return "❌ Muy probable que sea falsa";
+        return "❌ Imagen falsa";
     }
 </script>
 
 <div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
             <h2 class="text-xl font-bold text-white flex items-center gap-2">
@@ -136,7 +104,6 @@
         </div>
     </div>
 
-    <!-- Error -->
     {#if error}
         <div
             class="bg-red-500/20 border border-red-500/30 rounded-lg p-4 flex items-center gap-3"
@@ -161,8 +128,7 @@
         </div>
     {/if}
 
-    <!-- Resultados -->
-    {#if hasImage && (porcentajes.ssim > 0 || porcentajes.pixeles > 0 || porcentajes.ruido > 0)}
+    {#if hasImage && allReady}
         <div class="space-y-6">
             <div class="text-center">
                 <div
@@ -181,7 +147,6 @@
                         <div class="text-xs text-white/75 mt-1">Promedio</div>
                     </div>
                 </div>
-
                 <p class="text-white/75">
                     {getVeracityMessage(promedioFinal)}
                 </p>
