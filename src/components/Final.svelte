@@ -1,8 +1,8 @@
 <script>
     import { onMount } from "svelte";
-
     let error = null;
     let porcentajes = {
+        ocr: 0,
         pixeles: 0,
         ruido: 0,
         histograma: 0,
@@ -17,14 +17,15 @@
     });
 
     function cargarPorcentajes() {
+        const ocr = parseFloat(sessionStorage.getItem("porcentajeOCR")) || 0;
         const pixeles = parseFloat(sessionStorage.getItem("porcentajePixeles")) || 0;
         const ruido = parseFloat(sessionStorage.getItem("porcentajeRuido")) || 0;
         const histograma = parseFloat(sessionStorage.getItem("porcentajeHistograma")) || 0;
 
-        porcentajes = { pixeles, ruido, histograma };
-        allReady = (pixeles > 0 && ruido > 0 && histograma > 0);
+        porcentajes = { ocr, pixeles, ruido, histograma };
+        allReady = (ocr > 0 && pixeles > 0 && ruido > 0 && histograma > 0);
 
-        const valores = [pixeles, ruido, histograma].filter(v => v > 0);
+        const valores = [pixeles, ruido, histograma, ocr].filter(v => v > 0);
         if (valores.length > 0) {
             promedioFinal = Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) * 100) / 100;
         } else {
@@ -82,7 +83,7 @@
     }
 </script>
 
-<div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+<div class="bg-white/10 p-3 rounded-lg backdrop-blur-sm h-full">
     <div class="flex items-center justify-between mb-6">
         <div>
             <h2 class="text-xl font-bold text-white flex items-center gap-2">

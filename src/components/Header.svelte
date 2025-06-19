@@ -32,15 +32,6 @@
     }
   });
 
-  // async function handleLogout() {
-  //   try {
-  //     await logout();
-  //     window.location.href = "/";
-  //   } catch (err) {
-  //     error = "Error al cerrar sesión";
-  //   }
-  // }
-
   async function handleLogoutAll() {
     try {
       await logoutAll();

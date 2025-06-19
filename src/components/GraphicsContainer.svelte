@@ -22,12 +22,17 @@
     nombre: "Filtro de Ruido",
   };
 
+  let filtroOCR = {
+    porcentaje: 0,
+    nombre: "Filtro OCR",
+  };
+
   let loading = true;
-  let loadingSSIM = false;
+  let loadingOCR = false;
   let loadingRuido = false;
   let error = null;
 
-  const API_BASE_URL = "https://backend-qab1.onrender.com";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
   onMount(async () => {
     await cargarDatos();
@@ -41,24 +46,69 @@
       if (!token) {
         return (window.location.href = "/");
       }
-      await Promise.all([filtro_pixeles(), filtro_ruido()]);
 
-      const porcentajePixeles = filtroPixeles.porcentaje
-        ? parseFloat(filtroPixeles.porcentaje)
-        : 0;
-      const porcentajeRuido = filtroRuido.porcentaje_veracidad
-        ? parseFloat(filtroRuido.porcentaje_veracidad.replace("%", ""))
-        : 0;
+      await Promise.all([filtro_pixeles(), filtro_ruido(), filtro_ocr()]);
+      const porcentajePixeles = extractPercentage(filtroPixeles.porcentaje);
+      const porcentajeRuido = extractPercentage(filtroRuido.porcentaje_veracidad);
+      const porcentajeOCR = extractPercentage(filtroOCR.porcentaje);
 
       sessionStorage.setItem("porcentajePixeles", porcentajePixeles.toString());
       sessionStorage.setItem("porcentajeRuido", porcentajeRuido.toString());
-
+      sessionStorage.setItem("porcentajeOCR", porcentajeOCR.toString());
       window.dispatchEvent(new Event("filtrosActualizados"));
     } catch (err) {
       error = "Error al cargar los datos de análisis";
       console.error(err);
     } finally {
       loading = false;
+    }
+  }
+
+  async function filtro_ocr() {
+    const uploadedImage = sessionStorage.getItem("uploadedImage");
+    if (!uploadedImage) {
+      console.warn("⚠️ No hay imagen disponible para filtro OCR");
+      return;
+    }
+
+    loadingOCR = true;
+
+    try {
+      const blob = await base64ToBlob(uploadedImage);
+      const formData = new FormData();
+      formData.append("file", blob, "yape_image.jpg");
+      const controller = new AbortController();
+
+      const apiResponse = await fetch(`${API_BASE_URL}/ocr`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({ detail: "Error desconocido" }));
+        throw new Error(errorData.detail || `Error HTTP ${apiResponse.status}`);
+      }
+
+      const result = await apiResponse.json();
+      if (typeof result.porcentaje === 'number' && result.porcentaje >= 0) {
+        filtroOCR = {
+          porcentaje: Math.round(result.porcentaje * 100) / 100,
+          nombre: "Filtro OCR",
+        };        
+      } else {
+        throw new Error("Respuesta inválida del servidor");
+      }
+    } catch (err) {
+      console.error("💥 Error en filtro OCR:", err);
+      
+      filtroOCR = {
+        porcentaje: 0,
+        nombre: "Filtro OCR",
+      };
+      
+    } finally {
+      loadingOCR = false;
     }
   }
 
@@ -71,27 +121,14 @@
 
     loadingRuido = true;
     try {
-      const base64Data = uploadedImage.split(",")[1];
-      const mimeType = uploadedImage.split(",")[0].split(":")[1].split(";")[0];
-
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
-
+      const blob = await base64ToBlob(uploadedImage);
       const formData = new FormData();
       formData.append("file", blob, "image.jpg");
 
-      const apiResponse = await fetch(
-        `${API_BASE_URL}/filtro_ruido_detallado`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const apiResponse = await fetch(`${API_BASE_URL}/filtro_ruido_detallado`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (!apiResponse.ok) {
         const errorData = await apiResponse.json();
@@ -99,7 +136,6 @@
       }
 
       const result = await apiResponse.json();
-
       filtroRuido = {
         porcentaje_veracidad: result.porcentaje_veracidad || "0%",
         similitud_promedio: result.similitud_promedio || "0%",
@@ -112,10 +148,6 @@
         },
         nombre: "Filtro de Ruido",
       };
-      sessionStorage.setItem(
-        "porcentajeRuido",
-        filtroRuido.porcentaje_veracidad.toString(),
-      );
     } catch (err) {
       console.error("💥 Error en filtro_ruido:", err);
       filtroRuido.nombre = "Filtro de Ruido (Error)";
@@ -125,22 +157,13 @@
   }
 
   async function filtro_pixeles() {
+    const uploadedImage = sessionStorage.getItem("uploadedImage");
     try {
-      const uploadedImage = sessionStorage.getItem("uploadedImage");
       if (!uploadedImage) {
         return;
       }
-      const base64Data = uploadedImage.split(",")[1];
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "image/jpeg" });
-
+      
+      const blob = await base64ToBlob(uploadedImage);
       const formData = new FormData();
       formData.append("file", blob, "image.jpg");
 
@@ -152,30 +175,50 @@
       if (apiResponse.ok) {
         const data = await apiResponse.json();
         filtroPixeles = {
-          porcentaje: data.porcentaje ?? filtroPixeles.porcentaje,
-          coincidencias: data.coincidencias ?? filtroPixeles.coincidencias,
-          nombre: data.plantilla ?? filtroPixeles.nombre,
+          porcentaje: data.porcentaje ?? 0,
+          coincidencias: data.coincidencias ?? 0,
+          nombre: data.plantilla ?? "Filtro de Píxeles",
         };
-        sessionStorage.setItem(
-          "porcentajePixeles",
-          filtroPixeles.porcentaje.toString(),
-        );
       } else {
         const text = await apiResponse.text();
-        console.error("💥 API Error filtro pixeles:", text);
       }
     } catch (err) {
       console.error("💥 Error en filtro_pixeles:", err);
     }
   }
 
+  function extractPercentage(value) {    
+    if (typeof value === 'number') {
+      return value;
+    }
+    
+    if (typeof value === 'string') {
+      // Remover % y convertir a número
+      const cleaned = value.replace('%', '').trim();
+      const parsed = parseFloat(cleaned);
+      const result = isNaN(parsed) ? 0 : parsed;
+      return result;
+    }
+    return 0;
+  }
+
   async function recargarAnalisis() {
     await cargarDatos();
   }
 
-  function extractPercentage(percentageString) {
-    if (!percentageString) return 0;
-    return parseFloat(percentageString.replace("%", ""));
+  async function base64ToBlob(base64String) {
+    const [header, base64Data] = base64String.split(",");
+    const mimeType = header.split(":")[1].split(";")[0];
+    
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
   }
 </script>
 
@@ -200,23 +243,15 @@
       <div
         class="flex justify-around w-full bg-white/10 p-4 rounded-lg backdrop-blur-sm"
       >
-        <!-- Filtro SSIM -->
+        <!-- Filtro OCR -->
         <div class="relative">
           <Graphics
             color1="#FC7656"
             color2="#FCC656"
-            porcentaje={0}
-            titulo={"Filtro Fuente"}
+            porcentaje={filtroOCR.porcentaje}
+            titulo={filtroOCR.nombre}
           />
-
-          <div class="mt-2 text-center">
-            <p class="text-white/75 text-xs">
-              {0} comparadas
-            </p>
-            <p class="text-white/75 text-xs">
-              {0} coincidencias
-            </p>
-          </div>
+          <p class="text-white/75 mt-2 text-xs text-center">Palabras clave</p>
         </div>
 
         <!-- Filtro de Píxeles -->

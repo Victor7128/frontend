@@ -9,7 +9,7 @@
         exif: {},
     };
 
-    const API_BASE_URL = "https://backend-qab1.onrender.com";
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
     onMount(async () => {
         await filtro_exif();
@@ -99,7 +99,7 @@
 </script>
 
 <!-- Nuevo estilo simple y moderno para información básica -->
-<div class="w-full max-w-md mx-auto">
+<div class="w-full mx-auto">
     <div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
         <div class="flex items-center gap-2 mb-4">
             <svg class="w-5 h-5 text-white/20" fill="currentColor" viewBox="0 0 20 20">
@@ -111,29 +111,20 @@
             </svg>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Información Básica</h3>
         </div>
-        <ul class="space-y-2 text-gray-700 dark:text-gray-300 text-base">
+        <ul class="space-y-4 text-gray-700 dark:text-gray-300 text-base">
             {#if filtroExif.info_imagen?.format}
-                <li class="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-1">
-                    <span class="font-medium">Formato</span>
-                    <span>{filtroExif.info_imagen.format}</span>
+                <li class="border-b border-gray-100 dark:border-gray-800 pb-3">
+                    <div class="font-medium mb-1">Formato: {filtroExif.info_imagen.format}</div>
                 </li>
             {/if}
             {#if filtroExif.info_imagen?.width && filtroExif.info_imagen?.height}
-                <li class="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-1">
-                    <span class="font-medium">Dimensiones</span>
-                    <span>{filtroExif.info_imagen.width} × {filtroExif.info_imagen.height}</span>
+                <li class="border-b border-gray-100 dark:border-gray-800 pb-3">
+                    <div class="font-medium mb-1">Dimensiones: {filtroExif.info_imagen.width} × {filtroExif.info_imagen.height}</div>
                 </li>
             {/if}
             {#if filtroExif.info_imagen?.mode}
-                <li class="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-1">
-                    <span class="font-medium">Modo</span>
-                    <span>{filtroExif.info_imagen.mode}</span>
-                </li>
-            {/if}
-            {#if filtroExif.archivo}
-                <li class="flex justify-between">
-                    <span class="font-medium">Archivo</span>
-                    <span class="truncate max-w-[150px]" title={filtroExif.archivo}>{filtroExif.archivo}</span>
+                <li class="border-gray-100 dark:border-gray-800 pb-3">
+                    <div class="font-medium mb-1">Modo: {filtroExif.info_imagen.mode}</div>
                 </li>
             {/if}
         </ul>
