@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { validateToken } from "../services/authService";
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+  const API_BASE_URL = "http://127.0.0.1:8000";
 
   let identifier = "";
   let password = "";
@@ -64,7 +64,7 @@
     } catch (e) {
       error =
         e instanceof TypeError && e.message === "Failed to fetch"
-          ? "No se pudo conectar con el servidor. Revisa tu red o configuración CORS."
+          ? "No se pudo conectar con el servidor, posible error de red"
           : e instanceof Error
             ? e.message
             : "Ha ocurrido un error desconocido";

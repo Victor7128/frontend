@@ -27,17 +27,26 @@
     nombre: "Filtro OCR",
   };
 
-  let loading = true;
-  let loadingOCR = false;
+  // ✅ ESTADOS DE LOADING SEPARADOS
+  let loading = true;           // Para filtros principales (píxeles + ruido)
+  let loadingOCR = false;       // Para filtro OCR independiente
   let loadingRuido = false;
   let error = null;
+  let errorOCR = null;          // Error específico para OCR
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+  const API_BASE_URL = "http://127.0.0.1:8000";
 
   onMount(async () => {
+    // ✅ CARGAR FILTROS PRINCIPALES (sin OCR)
     await cargarDatos();
+    
+    // ✅ CARGAR OCR DE FORMA INDEPENDIENTE (no bloquea la UI)
+    setTimeout(() => {
+      filtro_ocr_independiente();
+    }, 500); // Pequeño delay para que se muestren primero los otros filtros
   });
 
+  // ✅ FUNCIÓN PRINCIPAL SIN OCR
   async function cargarDatos() {
     loading = true;
     error = null;
@@ -47,31 +56,40 @@
         return (window.location.href = "/");
       }
 
-      await Promise.all([filtro_pixeles(), filtro_ruido(), filtro_ocr()]);
+      // ✅ SOLO CARGAR PÍXELES Y RUIDO
+      await Promise.all([filtro_pixeles(), filtro_ruido()]);
+      
       const porcentajePixeles = extractPercentage(filtroPixeles.porcentaje);
       const porcentajeRuido = extractPercentage(filtroRuido.porcentaje_veracidad);
-      const porcentajeOCR = extractPercentage(filtroOCR.porcentaje);
 
       sessionStorage.setItem("porcentajePixeles", porcentajePixeles.toString());
       sessionStorage.setItem("porcentajeRuido", porcentajeRuido.toString());
-      sessionStorage.setItem("porcentajeOCR", porcentajeOCR.toString());
+      
+      // ✅ DISPARAR EVENTO SIN ESPERAR OCR
       window.dispatchEvent(new Event("filtrosActualizados"));
+      
     } catch (err) {
       error = "Error al cargar los datos de análisis";
-      console.error(err);
+      console.error("💥 Error en cargarDatos:", err);
     } finally {
-      loading = false;
+      loading = false; // ✅ UI se libera inmediatamente
     }
   }
 
-  async function filtro_ocr() {
+  // ✅ FILTRO OCR COMPLETAMENTE INDEPENDIENTE
+  async function filtro_ocr_independiente() {
     const uploadedImage = sessionStorage.getItem("uploadedImage");
     if (!uploadedImage) {
       console.warn("⚠️ No hay imagen disponible para filtro OCR");
+      filtroOCR = {
+        porcentaje: 0,
+        nombre: "Filtro OCR (Sin imagen)",
+      };
       return;
     }
 
     loadingOCR = true;
+    errorOCR = null;
 
     try {
       const blob = await base64ToBlob(uploadedImage);
@@ -79,14 +97,23 @@
       formData.append("file", blob, "yape_image.jpg");
       const controller = new AbortController();
 
+      // ✅ TIMEOUT PARA EVITAR CUELGUE INDEFINIDO
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 30000); // 30 segundos timeout
+
       const apiResponse = await fetch(`${API_BASE_URL}/ocr`, {
         method: "POST",
         body: formData,
         signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
       if (!apiResponse.ok) {
-        const errorData = await apiResponse.json().catch(() => ({ detail: "Error desconocido" }));
+        const errorData = await apiResponse.json().catch(() => ({ 
+          detail: `Error HTTP ${apiResponse.status}` 
+        }));
         throw new Error(errorData.detail || `Error HTTP ${apiResponse.status}`);
       }
 
@@ -95,17 +122,37 @@
         filtroOCR = {
           porcentaje: Math.round(result.porcentaje * 100) / 100,
           nombre: "Filtro OCR",
-        };        
+        };
+        
+        // ✅ GUARDAR PORCENTAJE OCR Y DISPARAR EVENTO
+        const porcentajeOCR = extractPercentage(filtroOCR.porcentaje);
+        sessionStorage.setItem("porcentajeOCR", porcentajeOCR.toString());
+        window.dispatchEvent(new Event("filtrosActualizados"));
+        
+        console.log("✅ Filtro OCR completado:", filtroOCR.porcentaje);
       } else {
         throw new Error("Respuesta inválida del servidor");
       }
+
     } catch (err) {
       console.error("💥 Error en filtro OCR:", err);
       
+      if (err.name === 'AbortError') {
+        errorOCR = "Timeout: El servidor OCR no responde";
+        filtroOCR.nombre = "Filtro OCR (Timeout)";
+      } else {
+        errorOCR = err.message;
+        filtroOCR.nombre = "Filtro OCR (Error)";
+      }
+      
       filtroOCR = {
+        ...filtroOCR,
         porcentaje: 0,
-        nombre: "Filtro OCR",
       };
+
+      // ✅ GUARDAR 0 EN CASO DE ERROR
+      sessionStorage.setItem("porcentajeOCR", "0");
+      window.dispatchEvent(new Event("filtrosActualizados"));
       
     } finally {
       loadingOCR = false;
@@ -181,6 +228,7 @@
         };
       } else {
         const text = await apiResponse.text();
+        console.warn("⚠️ Error en filtro_pixeles:", text);
       }
     } catch (err) {
       console.error("💥 Error en filtro_pixeles:", err);
@@ -193,7 +241,6 @@
     }
     
     if (typeof value === 'string') {
-      // Remover % y convertir a número
       const cleaned = value.replace('%', '').trim();
       const parsed = parseFloat(cleaned);
       const result = isNaN(parsed) ? 0 : parsed;
@@ -202,8 +249,17 @@
     return 0;
   }
 
+  // ✅ RECARGAR TODOS LOS FILTROS
   async function recargarAnalisis() {
     await cargarDatos();
+    setTimeout(() => {
+      filtro_ocr_independiente();
+    }, 100);
+  }
+
+  // ✅ RECARGAR SOLO OCR
+  async function recargarOCR() {
+    await filtro_ocr_independiente();
   }
 
   async function base64ToBlob(base64String) {
@@ -225,7 +281,7 @@
 <div class="flex h-full flex-col gap-4">
   {#if loading}
     <div class="flex items-center justify-center h-full">
-      <div class="text-white/75">Cargando análisis...</div>
+      <div class="text-white/75">Cargando análisis principal...</div>
     </div>
   {:else if error}
     <div class="flex flex-col items-center justify-center h-full gap-4">
@@ -243,15 +299,40 @@
       <div
         class="flex justify-around w-full bg-white/10 p-4 rounded-lg backdrop-blur-sm"
       >
-        <!-- Filtro OCR -->
+        <!-- ✅ FILTRO OCR CON ESTADO INDEPENDIENTE -->
         <div class="relative">
+          {#if loadingOCR}
+            <div
+              class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-10"
+            >
+              <div
+                class="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"
+              ></div>
+            </div>
+          {/if}
+
           <Graphics
             color1="#FC7656"
             color2="#FCC656"
             porcentaje={filtroOCR.porcentaje}
             titulo={filtroOCR.nombre}
           />
-          <p class="text-white/75 mt-2 text-xs text-center">Palabras clave</p>
+          
+          <div class="mt-2 text-center">
+            {#if errorOCR}
+              <p class="text-red-400 text-xs mb-1">Error OCR</p>
+              <button
+                on:click={recargarOCR}
+                class="text-xs text-blue-400 hover:text-blue-300 underline"
+              >
+                Reintentar
+              </button>
+            {:else if loadingOCR}
+              <p class="text-orange-400 text-xs">Cargando...</p>
+            {:else}
+              <p class="text-white/75 text-xs">Palabras clave</p>
+            {/if}
+          </div>
         </div>
 
         <!-- Filtro de Píxeles -->
@@ -274,7 +355,7 @@
               class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-10"
             >
               <div
-                class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
+                class="w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin"
               ></div>
             </div>
           {/if}

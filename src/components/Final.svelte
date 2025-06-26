@@ -18,16 +18,24 @@
 
     function cargarPorcentajes() {
         const ocr = parseFloat(sessionStorage.getItem("porcentajeOCR")) || 0;
-        const pixeles = parseFloat(sessionStorage.getItem("porcentajePixeles")) || 0;
-        const ruido = parseFloat(sessionStorage.getItem("porcentajeRuido")) || 0;
-        const histograma = parseFloat(sessionStorage.getItem("porcentajeHistograma")) || 0;
+        const pixeles =
+            parseFloat(sessionStorage.getItem("porcentajePixeles")) || 0;
+        const ruido =
+            parseFloat(sessionStorage.getItem("porcentajeRuido")) || 0;
+        const histograma =
+            parseFloat(sessionStorage.getItem("porcentajeHistograma")) || 0;
 
         porcentajes = { ocr, pixeles, ruido, histograma };
-        allReady = (ocr > 0 && pixeles > 0 && ruido > 0 && histograma > 0);
+        allReady = pixeles > 0 && ruido > 0 && histograma > 0;
 
-        const valores = [pixeles, ruido, histograma, ocr].filter(v => v > 0);
+        const valores = [pixeles, ruido, histograma, ocr].filter((v) => v > 0);
         if (valores.length > 0) {
-            promedioFinal = Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) * 100) / 100;
+            promedioFinal =
+                Math.round(
+                    (valores.reduce((a, b) => a + b, 0) / valores.length) * 100,
+                ) / 100;
+            const promedio = promedioFinal;
+            sessionStorage.setItem("promedioFinal", promedio.toString());
         } else {
             promedioFinal = 0;
         }
@@ -73,13 +81,6 @@
         if (percentage >= 90) return "bg-yellow-500/20 border-yellow-500/30";
         if (percentage >= 85) return "bg-orange-500/20 border-orange-500/30";
         return "bg-red-500/20 border-red-500/30";
-    }
-
-    function getVeracityMessage(percentage) {
-        if (percentage >= 95) return "✅ Imagen probablemente auténtica";
-        if (percentage >= 90) return "⚠️ Algunos indicadores sospechosos";
-        if (percentage >= 85) return "❌ Muy probable que sea falsa";
-        return "❌ Imagen falsa";
     }
 </script>
 
@@ -148,9 +149,6 @@
                         <div class="text-xs text-white/75 mt-1">Promedio</div>
                     </div>
                 </div>
-                <p class="text-white/75">
-                    {getVeracityMessage(promedioFinal)}
-                </p>
             </div>
         </div>
     {:else if hasImage}
