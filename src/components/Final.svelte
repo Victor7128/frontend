@@ -82,6 +82,24 @@
         if (percentage >= 85) return "bg-orange-500/20 border-orange-500/30";
         return "bg-red-500/20 border-red-500/30";
     }
+
+    // TEXTO Y COLOR PARA EL MENSAJE FINAL
+    function getMensajeVeracidad(percentage) {
+        if (percentage <= 95)
+            return {
+                text: "Comprobante sospechoso",
+                class: "text-yellow-400",
+            };
+        if (percentage < 90)
+            return {
+                text: "Comprobante alterado",
+                class: "text-orange-400",
+            };
+        return {
+            text: "Comprobante auténtico",
+                class: "text-green-400",
+        };
+    }
 </script>
 
 <div class="bg-white/10 p-3 rounded-lg backdrop-blur-sm h-full">
@@ -148,6 +166,16 @@
                         </div>
                         <div class="text-xs text-white/75 mt-1">Promedio</div>
                     </div>
+                </div>
+                <div class="flex justify-center">
+                    {#if promedioFinal > 0}
+                        {#key promedioFinal}
+                            {@const mensaje = getMensajeVeracidad(promedioFinal)}
+                            <div class={`px-4 py-2 font-semibold text-base ${mensaje.class}`}>
+                                {mensaje.text}
+                            </div>
+                        {/key}
+                    {/if}
                 </div>
             </div>
         </div>

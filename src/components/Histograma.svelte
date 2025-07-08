@@ -8,6 +8,7 @@
   let cargando = true;
   let porcentajeHistograma = null;
   let similitud = null;
+  let advertencia = null;
 
   const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -39,14 +40,20 @@
 
       if (!apiResponse.ok) {
         const errorData = await apiResponse.json();
-        throw new Error(errorData.detail || "Error en el análisis de histograma");
+        throw new Error(
+          errorData.detail || "Error en el análisis de histograma",
+        );
       }
 
       const result = await apiResponse.json();
       porcentajeHistograma = result.similitud
         ? parseFloat(result.similitud)
         : 0;
-      sessionStorage.setItem("porcentajeHistograma", porcentajeHistograma?.toString());
+      advertencia = result.advertencia || null;
+      sessionStorage.setItem(
+        "porcentajeHistograma",
+        porcentajeHistograma?.toString(),
+      );
       window.dispatchEvent(new Event("filtrosActualizados"));
 
       return {
@@ -57,10 +64,19 @@
     } catch (err) {
       error = "No se pudo cargar el histograma: " + err.message;
       porcentajeHistograma = null;
+      advertencia = null;
       return { rojo: [], verde: [], azul: [] };
     } finally {
       cargando = false;
     }
+  }
+
+  function colorAdvertenciaHistograma(advertencia) {
+    if (!advertencia) return "";
+    if (/sospechoso/i.test(advertencia)) return "text-yellow-400";
+    if (/alterad/i.test(advertencia)) return "text-orange-400";
+    if (/aut[eé]ntic/i.test(advertencia)) return "text-green-400";
+    return "text-gray-300";
   }
 
   onMount(async () => {
@@ -82,7 +98,7 @@
               backgroundColor: "rgba(255,99,132,0.6)",
               borderRadius: 4,
               barPercentage: 1.2,
-              categoryPercentage: 1.0
+              categoryPercentage: 1.0,
             },
             {
               label: "Verde",
@@ -90,7 +106,7 @@
               backgroundColor: "rgba(75,192,192,0.6)",
               borderRadius: 4,
               barPercentage: 1.2,
-              categoryPercentage: 1.0
+              categoryPercentage: 1.0,
             },
             {
               label: "Azul",
@@ -98,7 +114,7 @@
               backgroundColor: "rgba(54,162,235,0.6)",
               borderRadius: 4,
               barPercentage: 1.2,
-              categoryPercentage: 1.0
+              categoryPercentage: 1.0,
             },
           ],
         },
@@ -108,34 +124,44 @@
             legend: {
               labels: {
                 color: "rgba(255,255,255,0.75)",
-                font: { size: 16, weight: "bold", family: "'Inter', sans-serif" }
-              }
+                font: {
+                  size: 16,
+                  weight: "bold",
+                  family: "'Inter', sans-serif",
+                },
+              },
             },
             title: {
               display: true,
               text: "Histograma de Colores",
               color: "rgba(255,255,255,0.85)",
-              font: { size: 24, weight: "bold", family: "'Inter', sans-serif" }
-            }
+              font: { size: 24, weight: "bold", family: "'Inter', sans-serif" },
+            },
           },
           scales: {
             x: {
-              ticks: { color: "rgba(255,255,255,0.75)", font: { family: "'Inter', sans-serif" } },
+              ticks: {
+                color: "rgba(255,255,255,0.75)",
+                font: { family: "'Inter', sans-serif" },
+              },
               grid: {
                 color: "rgba(255,255,255,0.11)",
                 lineWidth: 2,
-                borderDash: [4, 2]
-              }
+                borderDash: [4, 2],
+              },
             },
             y: {
-              ticks: { color: "rgba(255,255,255,0.75)", font: { family: "'Inter', sans-serif" } },
+              ticks: {
+                color: "rgba(255,255,255,0.75)",
+                font: { family: "'Inter', sans-serif" },
+              },
               grid: {
                 color: "rgba(255,255,255,0.11)",
                 lineWidth: 2,
-                borderDash: [4, 2]
-              }
-            }
-          }
+                borderDash: [4, 2],
+              },
+            },
+          },
         },
       });
     } else {
@@ -145,21 +171,34 @@
   });
 </script>
 
-<div class="w-full h-auto mx-auto text-white/75 bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+<div
+  class="w-full h-auto mx-auto text-white/75 bg-white/10 p-4 rounded-lg backdrop-blur-sm"
+>
   {#if cargando}
     <p class="text-center font-bold mb-2">Cargando histograma...</p>
   {:else if error}
     <p class="text-center font-bold text-red-200">{error}</p>
   {/if}
+
+  <canvas bind:this={canvas} class="w-full bg-transparent text-white/75"
+  ></canvas>
+
   {#if porcentajeHistograma !== null}
-    <div class="w-full mb-4 text-center">
-      <span class="inline-block font-bold text-lg text-green-300 bg-green-800/40 rounded px-3 py-1">
-        Similitud con la plantilla: {porcentajeHistograma}%
+    <div class="w-full mb-2 text-center">
+      <span
+        class="inline-block font-bold text-2xl text-white/75 rounded px-3 py-1"
+      >
+        Similitud: {porcentajeHistograma}%
       </span>
     </div>
+    {#if advertencia}
+      <div class="w-full mb-3 text-center">
+        <span
+          class={`inline-block font-bold text-sm rounded px-3 py-1 ${colorAdvertenciaHistograma(advertencia)}`}
+        >
+          {advertencia}
+        </span>
+      </div>
+    {/if}
   {/if}
-  <canvas
-    bind:this={canvas}
-    class="w-full bg-transparent text-white/75"
-  ></canvas>
 </div>

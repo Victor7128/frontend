@@ -7,6 +7,7 @@
         tiene_gps: false,
         info_imagen: {},
         exif: {},
+        advertencia_formato: "", // Agregado
     };
 
     const API_BASE_URL = "http://127.0.0.1:8000";
@@ -56,6 +57,7 @@
                     tiene_gps: data.tiene_gps || false,
                     info_imagen: data.info_imagen || {},
                     exif: data.exif || {},
+                    advertencia_formato: data.advertencia_formato || "", // Agregado
                 };
             } else {
                 const contentType = apiResponse.headers.get("content-type");
@@ -83,6 +85,7 @@
                     tiene_gps: false,
                     info_imagen: {},
                     exif: {},
+                    advertencia_formato: "",
                 };
             }
         } catch (err) {
@@ -93,13 +96,23 @@
                 tiene_gps: false,
                 info_imagen: {},
                 exif: {},
+                advertencia_formato: "",
             };
         }
     }
 </script>
 
-<!-- Nuevo estilo simple y moderno para información básica -->
 <div class="w-full mx-auto">
+    <!-- Advertencia de formato solo si existe -->
+    {#if filtroExif.advertencia_formato}
+        <div class="mb-4 px-4 py-3 rounded bg-yellow-200/80 text-yellow-900 border-l-4 border-yellow-500 text-sm flex items-center gap-2">
+            <svg class="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.366-.446.957-.538 1.403-.172.049.04.094.085.133.134l6.857 8.486c.329.407.261 1.012-.146 1.341-.049.04-.094.085-.133.134l-6.857 8.486c-.366.446-.957.538-1.403.172a1 1 0 01-.133-.134l-6.857-8.486a1 1 0 01.146-1.341c.049-.04.094-.085.133-.134l6.857-8.486zM11 12a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V7a1 1 0 112 0v2a1 1 0 01-1 1z" clip-rule="evenodd" />
+            </svg>
+            <span>{filtroExif.advertencia_formato}</span>
+        </div>
+    {/if}
+
     <div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
         <div class="flex items-center gap-2 mb-4">
             <svg class="w-5 h-5 text-white/20" fill="currentColor" viewBox="0 0 20 20">
