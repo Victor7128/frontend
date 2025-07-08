@@ -34,6 +34,5 @@
 <div class="text-white/75 max-w-sm bg-white/10 p-3 rounded-lg backdrop-blur-sm">
   <h2 class="text-lg font-bold">Recomendación</h2>
   <p>{mensajeVeracidad}</p>
-  <br>
   <InfoOcr />
 </div>

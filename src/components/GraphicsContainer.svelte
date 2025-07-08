@@ -288,26 +288,10 @@
     return new Blob([byteArray], { type: mimeType });
   }
 
-  function colorAdvertenciaPalabras(advertencia) {
+  function colorAdvertencia(advertencia) {
     if (!advertencia) return "";
+    if (/alterad/i.test(advertencia)) return "text-red-400";
     if (/sospechoso/i.test(advertencia)) return "text-yellow-400";
-    if (/alterad/i.test(advertencia)) return "text-orange-400";
-    if (/aut[eé]ntic/i.test(advertencia)) return "text-green-400";
-    return "text-gray-300";
-  }
-
-  function colorAdvertenciaPixeles(advertencia) {
-    if (!advertencia) return "";
-    if (/sospechoso/i.test(advertencia)) return "text-yellow-400";
-    if (/alterad/i.test(advertencia)) return "text-orange-400";
-    if (/aut[eé]ntic/i.test(advertencia)) return "text-green-400";
-    return "text-gray-300";
-  }
-
-  function colorAdvertenciaRuido(advertencia) {
-    if (!advertencia) return "";
-    if (/sospechoso/i.test(advertencia)) return "text-yellow-400";
-    if (/alterad/i.test(advertencia)) return "text-orange-400";
     if (/aut[eé]ntic/i.test(advertencia)) return "text-green-400";
     return "text-gray-300";
   }
@@ -354,7 +338,9 @@
 
           <div class="mt-2 text-center">
             {#if filtroOCR.advertencia}
-              <p class={`text-xs mb-1 font-bold ${colorAdvertenciaPalabras(filtroOCR.advertencia)}`}>
+              <p
+                class={`text-xs mb-1 font-bold ${colorAdvertencia(filtroOCR.advertencia)}`}
+              >
                 {filtroOCR.advertencia}
               </p>
             {/if}
@@ -392,7 +378,9 @@
           />
           <div class="mt-2 text-center">
             {#if filtroPixeles.advertencia}
-              <p class={`text-xs font-bold ${colorAdvertenciaPixeles(filtroPixeles.advertencia)}`}>
+              <p
+                class={`text-xs font-bold ${colorAdvertencia(filtroPixeles.advertencia)}`}
+              >
                 {filtroPixeles.advertencia}
               </p>
             {/if}
@@ -429,7 +417,9 @@
 
           <div class="mt-2 text-center">
             {#if filtroRuido.advertencia}
-              <p class={`text-xs font-bold ${colorAdvertenciaRuido(filtroRuido.advertencia)}`}>
+              <p
+                class={`text-xs font-bold ${colorAdvertencia(filtroRuido.advertencia)}`}
+              >
                 {filtroRuido.advertencia}
               </p>
             {/if}

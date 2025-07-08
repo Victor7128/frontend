@@ -11,9 +11,13 @@
     let hasImage = false;
     let allReady = false;
 
+    // Nuevo: contador de advertencias
+    let advertenciasCount = 0;
+
     onMount(() => {
         checkForImage();
         cargarPorcentajes();
+        cargarAdvertencias();
     });
 
     function cargarPorcentajes() {
@@ -30,27 +34,40 @@
 
         const valores = [pixeles, ruido, histograma, ocr].filter((v) => v > 0);
         if (valores.length > 0) {
-            promedioFinal =
+            let promedio =
                 Math.round(
                     (valores.reduce((a, b) => a + b, 0) / valores.length) * 100,
                 ) / 100;
-            const promedio = promedioFinal;
-            sessionStorage.setItem("promedioFinal", promedio.toString());
+            // Restar 10 por cada advertencia
+            promedio -= 10 * advertenciasCount;
+            if (promedio < 0) promedio = 0;
+            promedioFinal = Math.round(promedio * 100) / 100;
+            sessionStorage.setItem("promedioFinal", promedioFinal.toString());
         } else {
             promedioFinal = 0;
         }
+    }
+
+    function cargarAdvertencias() {
+        let advCount = 0;
+        if (typeof window !== "undefined") {
+            advCount = parseInt(sessionStorage.getItem("advertencias_ocr")) || 0;
+        }
+        advertenciasCount = advCount;
     }
 
     async function checkForImage() {
         const uploadedImage = sessionStorage.getItem("uploadedImage");
         hasImage = !!uploadedImage;
         if (hasImage) {
+            cargarAdvertencias();
             cargarPorcentajes();
         }
     }
 
     async function handleStorageChange() {
         await checkForImage();
+        cargarAdvertencias();
         cargarPorcentajes();
     }
 
@@ -71,34 +88,33 @@
 
     function getPercentageColor(percentage) {
         if (percentage >= 95) return "text-green-400";
-        if (percentage >= 90) return "text-yellow-400";
-        if (percentage >= 85) return "text-orange-400";
+        if (percentage >= 90) return "text-orange-400";
         return "text-red-400";
     }
 
     function getPercentageBgColor(percentage) {
         if (percentage >= 95) return "bg-green-500/20 border-green-500/30";
-        if (percentage >= 90) return "bg-yellow-500/20 border-yellow-500/30";
-        if (percentage >= 85) return "bg-orange-500/20 border-orange-500/30";
+        if (percentage >= 90) return "bg-orange-500/20 border-orange-500/30";
         return "bg-red-500/20 border-red-500/30";
     }
 
-    // TEXTO Y COLOR PARA EL MENSAJE FINAL
     function getMensajeVeracidad(percentage) {
-        if (percentage <= 95)
+        if (percentage >= 95) {
+            return {
+                text: "Comprobante auténtico",
+                class: "text-green-400",
+            };
+        } else if (percentage >= 90) {
             return {
                 text: "Comprobante sospechoso",
-                class: "text-yellow-400",
-            };
-        if (percentage < 90)
-            return {
-                text: "Comprobante alterado",
                 class: "text-orange-400",
             };
-        return {
-            text: "Comprobante auténtico",
-                class: "text-green-400",
-        };
+        } else {
+            return {
+                text: "Comprobante alterado",
+                class: "text-red-400",
+            };
+        }
     }
 </script>
 
@@ -170,8 +186,11 @@
                 <div class="flex justify-center">
                     {#if promedioFinal > 0}
                         {#key promedioFinal}
-                            {@const mensaje = getMensajeVeracidad(promedioFinal)}
-                            <div class={`px-4 py-2 font-semibold text-base ${mensaje.class}`}>
+                            {@const mensaje =
+                                getMensajeVeracidad(promedioFinal)}
+                            <div
+                                class={`px-4 py-2 font-semibold text-base ${mensaje.class}`}
+                            >
                                 {mensaje.text}
                             </div>
                         {/key}

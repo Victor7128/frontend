@@ -6,15 +6,29 @@
   let isLoading = false;
   let result = null;
   let error = null;
+  let isOpen = false;
 
   $: hasImage =
     typeof window !== "undefined" &&
     sessionStorage?.getItem("uploadedImage") != null;
 
-  // Mostrar advertencia de monto
-  $: advertenciaMonto = result && result.monto_fuera_rango
-    ? "⚠️ El monto detectado supera S/ 500. Verifica que el comprobante sea válido."
-    : "";
+  $: advertencias =
+    result && result.advertencias
+      ? result.advertencias.filter((a) => !!a)
+      : [];
+
+  $: advertenciasCount = advertencias.length;
+
+  $: advertenciaMonto = advertencias.find((a) =>
+    a.toLowerCase().includes("monto")
+  );
+
+  $: if (!isLoading && result !== null && typeof window !== "undefined") {
+    sessionStorage.setItem(
+      "advertencias_ocr",
+      advertenciasCount > 0 ? advertenciasCount.toString() : "0"
+    );
+  }
 
   onMount(() => {
     if (hasImage) processImage();
@@ -76,9 +90,42 @@
       isLoading = false;
     }
   }
+
+  function toggleDropdown() {
+    isOpen = !isOpen;
+  }
+
+  // Helper para mostrar dato o fallback
+  function display(key, fallback = "No detectado") {
+    if (!result) return fallback;
+    return (
+      result[key] ||
+      result[key.replace(/([A-Z])/g, "_$1").toLowerCase()] ||
+      fallback
+    );
+  }
 </script>
 
-<!-- Compacto para flex horizontal -->
+<style>
+  .dropdown-arrow {
+    transition: transform 0.25s;
+  }
+  .dropdown-arrow.open {
+    transform: rotate(-180deg);
+  }
+  .dropdown-content {
+    transition: opacity 0.20s, transform 0.20s;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .dropdown-content.closed {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+  }
+</style>
+
 <div class="w-full bg-white/10 rounded-lg backdrop-blur-sm px-3 py-2 flex flex-col items-center shadow-sm">
   {#if error}
     <div class="bg-red-500/20 border border-red-500/30 rounded-lg p-2 w-full text-xs text-red-400 mb-1 flex items-center gap-2">
@@ -87,40 +134,78 @@
     </div>
   {/if}
 
-  <!-- Advertencia monto fuera de rango si aplica -->
-  {#if advertenciaMonto}
-    <div class="bg-yellow-400/20 border border-yellow-400/40 rounded p-2 w-full text-xs text-yellow-800 mb-1 flex items-center gap-2">
-      <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <span>{advertenciaMonto}</span>
+  {#if advertencias.length > 0}
+    <div class="w-full text-xs bg-red-800/20 text-red-500 rounded-lg mb-2 py-1 px-2 flex flex-col gap-1">
+      {#each advertencias as adv}
+        <div class="flex items-center gap-1">
+          <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>{adv}</span>
+        </div>
+      {/each}
     </div>
   {/if}
 
-  {#if hasImage && result}
-    <div class="w-full flex flex-col gap-1 text-xs text-white/80 mt-1">
+  <button
+    on:click={toggleDropdown}
+    class="bg-white/75 text-black
+                      hover:text-white/75 transition-all duration-200 text-xs rounded-lg hover:bg-black px-4 py-1 mt-1 flex items-center gap-2 select-none cursor-pointer"
+    disabled={isLoading || !result}
+    aria-expanded={isOpen}
+    aria-controls="dropdown-ocr-info"
+    type="button"
+  >
+    <span>Ver datos del comprobante</span>
+    <svg class="dropdown-arrow w-4 h-4 {isOpen ? 'open' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </button>
+
+  <div
+    id="dropdown-ocr-info"
+    class="dropdown-content {isOpen ? '' : 'closed'} w-full bg-white brightness-90 border rounded-lg mt-2 px-3 py-2 shadow-md flex flex-col gap-1"
+    style="position: absolute; bottom: 110%; left: 0; z-index: 50; min-width: 230px;"
+    aria-hidden={!isOpen}
+  >
+    {#if isLoading}
+      <div class="w-full text-center py-2">
+        <div class="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-1 text-black/75"></div>
+        <span class="text-xs text-blue-200">Procesando...</span>
+      </div>
+    {:else if result}
       <div class="flex justify-between">
-        <span class="font-semibold">Nro. Op.:</span>
-        <span class="truncate max-w-[110px] text-right text-white">{result.nro_operacion || "No detectado"}</span>
+        <span class="font-semibold text-black/75">Nro. Op.:</span>
+        <span class="truncate max-w-[110px] text-right text-black/75">{display("codigo_operacion")}</span>
       </div>
       <div class="flex justify-between">
-        <span class="font-semibold">Fecha/Hora:</span>
-        <span class="truncate max-w-[110px] text-right text-white">{result.fecha_hora || "No detectada"}</span>
+        <span class="font-semibold text-black/75">Fecha:</span>
+        <span class="truncate max-w-[110px] text-right text-black/75">{display("fecha")}</span>
       </div>
       <div class="flex justify-between">
-        <span class="font-semibold">Receptor:</span>
-        <span class="truncate max-w-[110px] text-right text-white">{result.receptor || "No detectado"}</span>
+        <span class="font-semibold text-black/75">Hora:</span>
+        <span class="truncate max-w-[110px] text-right text-black/75">{display("hora")}</span>
       </div>
-    </div>
-  {:else if hasImage && isLoading}
-    <div class="w-full text-center py-2">
-      <div class="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
-      <span class="text-xs text-blue-200">Procesando...</span>
-    </div>
-  {:else}
-    <div class="w-full text-center py-2">
-      <svg class="w-7 h-7 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-      </svg>
-      <span class="text-gray-400 text-xs">No hay imagen</span>
-    </div>
-  {/if}
+      <div class="flex justify-between">
+        <span class="font-semibold text-black/75">Receptor:</span>
+        <span class="truncate max-w-[110px] text-right text-black/75">{display("receptor")}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="font-semibold text-black/75">Monto:</span>
+        <span class="truncate max-w-[110px] text-right text-black/75">S/ {display("monto")}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="font-semibold text-black/75">Destino:</span>
+        <span class="truncate max-w-[110px] text-right text-black/75">{display("destino")}</span>
+      </div>
+      {#if result.comentario}
+        <div class="flex flex-col mt-2">
+          <span class="font-semibold text-black/75">Comentario:</span>
+          <span class="text-black/75">{result.comentario}</span>
+        </div>
+      {/if}
+    {:else}
+      <div class="w-full text-center py-2">
+        <span class="text-black/75 text-xs">Sin información OCR</span>
+      </div>
+    {/if}
+  </div>
 </div>
